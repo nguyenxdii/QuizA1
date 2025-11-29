@@ -187,6 +187,6 @@ app.MapPost("/api/questions", async (HttpRequest request, QuizA1DbContext db) =>
     }
 });
 
-app.MapFallback(() => Results.Redirect("/index.html"));
+app.MapFallbackToFile("/index.html");
 
 app.Run();
