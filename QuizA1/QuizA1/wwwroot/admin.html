@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Quản Lý Câu Hỏi</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Quản Lý Câu Hỏi</h1>
+            <p class="subtitle">Thêm câu hỏi mới vào ngân hàng đề thi</p>
+            <a href="index.html" class="home-link">← Về trang chủ</a>
+        </header>
+
+        <div class="admin-container">
+            <form id="questionForm" class="question-form">
+                <div class="form-group">
+                    <label for="examSelect">Chọn đề thi:</label>
+                    <select id="examSelect" name="ExamID" required>
+                        <option value="">-- Chọn đề --</option>
+                        <option value="1">Đề 1</option>
+                        <option value="2">Đề 2</option>
+                        <option value="3">Đề 3</option>
+                        <option value="4">Đề 4</option>
+                        <option value="5">Đề 5</option>
+                        <option value="6">Đề 6</option>
+                        <option value="7">Đề 7</option>
+                        <option value="8">Đề 8</option>
+                        <option value="9">Đề 9</option>
+                        <option value="10">Đề 10</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="questionText">Câu hỏi:</label>
+                    <textarea id="questionText" name="QuestionText" rows="4" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="explanation">Giải thích:</label>
+                    <textarea id="explanation" name="Explanation" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="imageUpload">Ảnh minh họa (tùy chọn):</label>
+                    <input type="file" id="imageUpload" name="Image" accept="image/*">
+                    <div id="imagePreview" class="image-preview"></div>
+                </div>
+
+                <div class="answers-section">
+                    <h3>Đáp án</h3>
+                    
+                    <div class="answer-group">
+                        <input type="radio" name="correctAnswer" value="1" id="correct1" required>
+                        <input type="text" name="Answer1" id="answer1" placeholder="Đáp án 1" required>
+                        <label for="correct1" class="correct-label">Đáp án đúng</label>
+                    </div>
+
+                    <div class="answer-group">
+                        <input type="radio" name="correctAnswer" value="2" id="correct2">
+                        <input type="text" name="Answer2" id="answer2" placeholder="Đáp án 2" required>
+                        <label for="correct2" class="correct-label">Đáp án đúng</label>
+                    </div>
+
+                    <div class="answer-group">
+                        <input type="radio" name="correctAnswer" value="3" id="correct3">
+                        <input type="text" name="Answer3" id="answer3" placeholder="Đáp án 3">
+                        <label for="correct3" class="correct-label">Đáp án đúng</label>
+                    </div>
+
+                    <div class="answer-group">
+                        <input type="radio" name="correctAnswer" value="4" id="correct4">
+                        <input type="text" name="Answer4" id="answer4" placeholder="Đáp án 4">
+                        <label for="correct4" class="correct-label">Đáp án đúng</label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">✅ Thêm câu hỏi</button>
+                    <button type="reset" class="reset-btn">🔄 Làm mới</button>
+                </div>
+            </form>
+
+            <div id="notification" class="notification" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

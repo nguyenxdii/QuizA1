@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thi Trắc Nghiệm Giấy Phép Lái Xe A1</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏍️ Thi Trắc Nghiệm Giấy Phép Lái Xe A1</h1>
+            <p class="subtitle">Chọn đề thi để bắt đầu làm bài</p>
+        </header>
+
+        <!-- Danh sách đề thi -->
+        <div id="examList" class="exam-list">
+            <!-- Sẽ được load bằng JavaScript -->
+        </div>
+
+        <!-- Khu vực làm bài thi -->
+        <div id="quizContainer" class="quiz-container" style="display: none;">
+            <div class="quiz-header">
+                <h2 id="examTitle"></h2>
+                <button id="backBtn" class="back-btn">← Quay lại</button>
+            </div>
+
+            <div id="questionsContainer"></div>
+
+            <div class="quiz-actions">
+                <button id="showAnswersBtn" class="show-answers-btn">👁️ Hiện đáp án</button>
+                <button id="submitBtn" class="submit-btn">📝 Nộp bài</button>
+            </div>
+        </div>
+
+        <!-- Hiển thị kết quả -->
+        <div id="resultContainer" class="result-container" style="display: none;">
+            <div class="result-header">
+                <h2>📊 Kết Quả Thi</h2>
+            </div>
+            <div id="resultContent"></div>
+            <button id="retryBtn" class="retry-btn">🔄 Làm lại</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
