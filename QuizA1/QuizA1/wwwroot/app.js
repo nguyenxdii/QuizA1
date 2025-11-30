@@ -2,8 +2,8 @@
 let currentExam = null;
 let currentQuestions = [];
 let userAnswers = {};
-let showingAnswers = false;
 let randomizeEnabled = false;
+let answerVisibility = {};
 
 // API base URL
 const API_BASE = '/api';
@@ -52,7 +52,7 @@ async function loadExam(examId, examName) {
         currentExam = exam;
         currentQuestions = exam.questions;
         userAnswers = {};
-        showingAnswers = false;
+        answerVisibility = {};
         
         // Random câu hỏi nếu được bật
         if (randomizeEnabled) {
@@ -106,10 +106,10 @@ function createQuestionCard(question, index) {
     html += '<ul class="answers-list">';
     answers.forEach(answer => {
         html += `
-            <li class="answer-item" data-answer-id="${answer.answerId}" data-is-correct="${answer.isCorrect}">
-                <input type="radio" 
-                       name="question-${question.questionId}" 
-                       value="${answer.answerId}" 
+            <li class="answer-item" data-answer-id="${answer.answerId}" data-is-correct="${answer.isCorrect}" onclick="handleAnswerClick(${question.questionId}, ${answer.answerId}, ${answer.isCorrect})">
+                <input type="radio"
+                       name="question-${question.questionId}"
+                       value="${answer.answerId}"
                        id="answer-${answer.answerId}"
                        onchange="selectAnswer(${question.questionId}, ${answer.answerId}, ${answer.isCorrect})">
                 <label for="answer-${answer.answerId}">${answer.answerText}</label>
@@ -117,10 +117,12 @@ function createQuestionCard(question, index) {
         `;
     });
     html += '</ul>';
-    
-    // Answer status (initially hidden)
+
     html += `
-        <div class="answer-status" id="status-${question.questionId}"></div>
+        <div class="question-actions">
+            <button class="toggle-answer-btn" id="toggle-${question.questionId}" onclick="toggleAnswer(${question.questionId})">👁️ Hiện đáp án</button>
+            <div class="answer-status" id="status-${question.questionId}"></div>
+        </div>
     `;
     
     card.innerHTML = html;
@@ -130,58 +132,81 @@ function createQuestionCard(question, index) {
 // Select answer
 function selectAnswer(questionId, answerId, isCorrect) {
     userAnswers[questionId] = { answerId, isCorrect };
-    
+
     // Highlight selected answer
     const questionCard = document.getElementById(`question-${questionId}`);
     questionCard.querySelectorAll('.answer-item').forEach(item => {
         item.classList.remove('selected');
     });
     questionCard.querySelector(`[data-answer-id="${answerId}"]`).classList.add('selected');
-    
-    // Update status if showing answers
-    if (showingAnswers) {
-        updateAnswerStatus(questionId);
-    }
+
+    updateAnswerStatus(questionId);
 }
 
-// Show answers functionality
-function toggleShowAnswers() {
-    showingAnswers = !showingAnswers;
-    
-    currentQuestions.forEach(question => {
-        updateAnswerStatus(question.questionId);
-    });
-    
-    const btn = document.getElementById('showAnswersBtn');
-    btn.textContent = showingAnswers ? '🙈 Ẩn đáp án' : '👁️ Hiện đáp án';
+// Click handler for entire answer item
+function handleAnswerClick(questionId, answerId, isCorrect) {
+    const radio = document.getElementById(`answer-${answerId}`);
+    radio.checked = true;
+    selectAnswer(questionId, answerId, isCorrect);
+}
+
+// Toggle answer visibility per question
+function toggleAnswer(questionId) {
+    answerVisibility[questionId] = !answerVisibility[questionId];
+    updateAnswerStatus(questionId, true);
+
+    const btn = document.getElementById(`toggle-${questionId}`);
+    btn.textContent = answerVisibility[questionId] ? '🙈 Ẩn đáp án' : '👁️ Hiện đáp án';
 }
 
 // Update answer status for a question
-function updateAnswerStatus(questionId) {
+function updateAnswerStatus(questionId, forceShow = false) {
     const statusDiv = document.getElementById(`status-${questionId}`);
     const userAnswer = userAnswers[questionId];
-    
-    if (!showingAnswers) {
+    const questionCard = document.getElementById(`question-${questionId}`);
+
+    const shouldShow = answerVisibility[questionId] || forceShow;
+    if (!shouldShow) {
         statusDiv.style.display = 'none';
         statusDiv.className = 'answer-status';
+        questionCard.querySelectorAll('.answer-item').forEach(item => {
+            item.classList.remove('correct');
+            item.classList.remove('incorrect');
+            item.classList.remove('not-selected');
+        });
         return;
     }
-    
+
     statusDiv.style.display = 'block';
-    
+
     // Find correct answer
     const question = currentQuestions.find(q => q.questionId === questionId);
     const correctAnswer = question.answers.find(a => a.isCorrect);
     
+    questionCard.querySelectorAll('.answer-item').forEach(item => {
+        item.classList.remove('correct', 'incorrect', 'not-selected');
+    });
+
     if (!userAnswer) {
         statusDiv.className = 'answer-status not-selected show';
         statusDiv.innerHTML = `<strong>⚠️ Chưa chọn đáp án</strong><br>Đáp án đúng: ${correctAnswer.answerText}`;
+        questionCard.classList.add('unanswered');
     } else if (userAnswer.isCorrect) {
         statusDiv.className = 'answer-status correct show';
         statusDiv.innerHTML = '<strong>✅ Đúng rồi!</strong>';
+        questionCard.querySelector(`[data-answer-id="${userAnswer.answerId}"]`).classList.add('correct');
+        questionCard.classList.remove('unanswered');
     } else {
         statusDiv.className = 'answer-status incorrect show';
         statusDiv.innerHTML = `<strong>❌ Sai rồi!</strong><br>Đáp án đúng: ${correctAnswer.answerText}`;
+        questionCard.querySelector(`[data-answer-id="${userAnswer.answerId}"]`).classList.add('incorrect');
+        questionCard.classList.remove('unanswered');
+
+        // Highlight correct answer for reference
+        const correctItem = questionCard.querySelector(`[data-answer-id="${correctAnswer.answerId}"]`);
+        if (correctItem) {
+            correctItem.classList.add('correct');
+        }
     }
 }
 
@@ -191,26 +216,27 @@ function submitExam() {
         alert('Bạn chưa chọn câu trả lời nào!');
         return;
     }
-    
+
     if (!confirm(`Bạn đã chọn ${Object.keys(userAnswers).length}/${currentQuestions.length} câu. Bạn có chắc muốn nộp bài?`)) {
         return;
     }
-    
+
     // Calculate score
     let correctCount = 0;
     let wrongAnswers = [];
-    
+
     currentQuestions.forEach((question, index) => {
+        answerVisibility[question.questionId] = true;
         const userAnswer = userAnswers[question.questionId];
-        
+
         if (userAnswer && userAnswer.isCorrect) {
             correctCount++;
         } else {
             const correctAnswer = question.answers.find(a => a.isCorrect);
-            const userAnswerText = userAnswer 
-                ? question.answers.find(a => a.answerId === userAnswer.answerId)?.answerText 
+            const userAnswerText = userAnswer
+                ? question.answers.find(a => a.answerId === userAnswer.answerId)?.answerText
                 : 'Không chọn';
-            
+
             wrongAnswers.push({
                 number: index + 1,
                 question: question.questionText,
@@ -219,29 +245,34 @@ function submitExam() {
                 explanation: question.explanation
             });
         }
+
+        updateAnswerStatus(question.questionId, true);
+        const toggleBtn = document.getElementById(`toggle-${question.questionId}`);
+        if (toggleBtn) {
+            toggleBtn.textContent = answerVisibility[question.questionId] ? '🙈 Ẩn đáp án' : '👁️ Hiện đáp án';
+        }
     });
-    
+
     displayResult(correctCount, wrongAnswers);
 }
 
 // Display result
 function displayResult(correctCount, wrongAnswers) {
-    document.getElementById('quizContainer').style.display = 'none';
     document.getElementById('resultContainer').style.display = 'block';
-    
+
     const total = currentQuestions.length;
     const percentage = ((correctCount / total) * 100).toFixed(1);
-    
+
     let resultHTML = `
         <div class="score-display">
             ${correctCount}/${total} câu đúng (${percentage}%)
         </div>
     `;
-    
+
     if (wrongAnswers.length > 0) {
         resultHTML += '<div class="wrong-answers">';
         resultHTML += '<h3>📋 Các câu trả lời sai:</h3>';
-        
+
         wrongAnswers.forEach(item => {
             resultHTML += `
                 <div class="wrong-question">
@@ -256,12 +287,12 @@ function displayResult(correctCount, wrongAnswers) {
                 </div>
             `;
         });
-        
+
         resultHTML += '</div>';
     } else {
         resultHTML += '<p style="text-align: center; font-size: 1.5em; color: #28a745;">🎉 Chúc mừng! Bạn đã trả lời đúng tất cả!</p>';
     }
-    
+
     document.getElementById('resultContent').innerHTML = resultHTML;
 }
 
@@ -270,13 +301,12 @@ function setupEventListeners() {
     document.getElementById('backBtn').addEventListener('click', () => {
         document.getElementById('quizContainer').style.display = 'none';
         document.getElementById('examList').style.display = 'grid';
+        document.getElementById('resultContainer').style.display = 'none';
         currentExam = null;
         currentQuestions = [];
         userAnswers = {};
-        showingAnswers = false;
+        answerVisibility = {};
     });
-    
-    document.getElementById('showAnswersBtn').addEventListener('click', toggleShowAnswers);
     document.getElementById('submitBtn').addEventListener('click', submitExam);
     
     document.getElementById('retryBtn').addEventListener('click', () => {
