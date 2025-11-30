@@ -2,8 +2,8 @@
 let currentExam = null;
 let currentQuestions = [];
 let userAnswers = {};
-let showingAnswers = false;
 let randomizeEnabled = false;
+let isSubmitted = false;
 
 // API base URL
 const API_BASE = '/api';
@@ -52,7 +52,7 @@ async function loadExam(examId, examName) {
         currentExam = exam;
         currentQuestions = exam.questions;
         userAnswers = {};
-        showingAnswers = false;
+        isSubmitted = false;
         
         // Random câu hỏi nếu được bật
         if (randomizeEnabled) {
@@ -79,6 +79,8 @@ function displayExam(examName) {
         const questionCard = createQuestionCard(question, index);
         container.appendChild(questionCard);
     });
+    
+    updateQuestionCounter();
 }
 
 // Create question card
@@ -88,8 +90,10 @@ function createQuestionCard(question, index) {
     card.id = `question-${question.questionId}`;
     
     let html = `
-        <div class="question-number">Câu ${index + 1}</div>
-        <div class="question-text">${question.questionText}</div>
+        <div class="question-header">
+            <div class="question-number">Câu ${index + 1}:</div>
+            <div class="question-text">${question.questionText}</div>
+        </div>
     `;
     
     // Add image if exists
@@ -104,22 +108,25 @@ function createQuestionCard(question, index) {
     }
     
     html += '<ul class="answers-list">';
-    answers.forEach(answer => {
+    answers.forEach((answer, idx) => {
         html += `
-            <li class="answer-item" data-answer-id="${answer.answerId}" data-is-correct="${answer.isCorrect}">
+            <li class="answer-item" data-answer-id="${answer.answerId}" data-is-correct="${answer.isCorrect}" 
+                onclick="selectAnswer(${question.questionId}, ${answer.answerId}, ${answer.isCorrect})">
                 <input type="radio" 
                        name="question-${question.questionId}" 
                        value="${answer.answerId}" 
-                       id="answer-${answer.answerId}"
-                       onchange="selectAnswer(${question.questionId}, ${answer.answerId}, ${answer.isCorrect})">
-                <label for="answer-${answer.answerId}">${answer.answerText}</label>
+                       id="answer-${answer.answerId}">
+                <label for="answer-${answer.answerId}">${idx + 1}. ${answer.answerText}</label>
             </li>
         `;
     });
     html += '</ul>';
     
-    // Answer status (initially hidden)
+    // Show answer button for each question
     html += `
+        <button class="show-answer-btn" onclick="toggleShowAnswer(${question.questionId})">
+            👁️ Hiện đáp án
+        </button>
         <div class="answer-status" id="status-${question.questionId}"></div>
     `;
     
@@ -129,6 +136,8 @@ function createQuestionCard(question, index) {
 
 // Select answer
 function selectAnswer(questionId, answerId, isCorrect) {
+    if (isSubmitted) return; // Không cho chọn sau khi nộp bài
+    
     userAnswers[questionId] = { answerId, isCorrect };
     
     // Highlight selected answer
@@ -136,24 +145,30 @@ function selectAnswer(questionId, answerId, isCorrect) {
     questionCard.querySelectorAll('.answer-item').forEach(item => {
         item.classList.remove('selected');
     });
-    questionCard.querySelector(`[data-answer-id="${answerId}"]`).classList.add('selected');
+    const selectedItem = questionCard.querySelector(`[data-answer-id="${answerId}"]`);
+    selectedItem.classList.add('selected');
     
-    // Update status if showing answers
-    if (showingAnswers) {
-        updateAnswerStatus(questionId);
-    }
+    // Check radio button
+    document.getElementById(`answer-${answerId}`).checked = true;
+    
+    // Update progress
+    updateProgress();
+    updateQuestionCounter();
 }
 
-// Show answers functionality
-function toggleShowAnswers() {
-    showingAnswers = !showingAnswers;
+// Toggle show answer for individual question
+function toggleShowAnswer(questionId) {
+    const statusDiv = document.getElementById(`status-${questionId}`);
+    const questionCard = document.getElementById(`question-${questionId}`);
     
-    currentQuestions.forEach(question => {
-        updateAnswerStatus(question.questionId);
-    });
-    
-    const btn = document.getElementById('showAnswersBtn');
-    btn.textContent = showingAnswers ? '🙈 Ẩn đáp án' : '👁️ Hiện đáp án';
+    if (statusDiv.classList.contains('show')) {
+        // Hide answer
+        statusDiv.classList.remove('show');
+        statusDiv.style.display = 'none';
+    } else {
+        // Show answer
+        updateAnswerStatus(questionId);
+    }
 }
 
 // Update answer status for a question
@@ -161,13 +176,8 @@ function updateAnswerStatus(questionId) {
     const statusDiv = document.getElementById(`status-${questionId}`);
     const userAnswer = userAnswers[questionId];
     
-    if (!showingAnswers) {
-        statusDiv.style.display = 'none';
-        statusDiv.className = 'answer-status';
-        return;
-    }
-    
     statusDiv.style.display = 'block';
+    statusDiv.classList.add('show');
     
     // Find correct answer
     const question = currentQuestions.find(q => q.questionId === questionId);
@@ -196,87 +206,101 @@ function submitExam() {
         return;
     }
     
+    isSubmitted = true;
+    
     // Calculate score
     let correctCount = 0;
-    let wrongAnswers = [];
     
-    currentQuestions.forEach((question, index) => {
+    currentQuestions.forEach((question) => {
+        const questionCard = document.getElementById(`question-${question.questionId}`);
         const userAnswer = userAnswers[question.questionId];
+        const correctAnswer = question.answers.find(a => a.isCorrect);
         
-        if (userAnswer && userAnswer.isCorrect) {
-            correctCount++;
+        // Clear all previous styling
+        questionCard.querySelectorAll('.answer-item').forEach(item => {
+            item.classList.remove('correct', 'incorrect', 'unanswered');
+        });
+        
+        if (userAnswer) {
+            if (userAnswer.isCorrect) {
+                // Correct answer - keep selected
+                correctCount++;
+                const selectedItem = questionCard.querySelector(`[data-answer-id="${userAnswer.answerId}"]`);
+                selectedItem.classList.add('correct');
+            } else {
+                // Wrong answer - mark red, and highlight correct in green
+                const selectedItem = questionCard.querySelector(`[data-answer-id="${userAnswer.answerId}"]`);
+                selectedItem.classList.add('incorrect');
+                
+                const correctItem = questionCard.querySelector(`[data-is-correct="true"]`);
+                correctItem.classList.add('correct');
+            }
         } else {
-            const correctAnswer = question.answers.find(a => a.isCorrect);
-            const userAnswerText = userAnswer 
-                ? question.answers.find(a => a.answerId === userAnswer.answerId)?.answerText 
-                : 'Không chọn';
-            
-            wrongAnswers.push({
-                number: index + 1,
-                question: question.questionText,
-                userAnswer: userAnswerText,
-                correctAnswer: correctAnswer.answerText,
-                explanation: question.explanation
-            });
+            // Unanswered - highlight correct answer in green with warning
+            const correctItem = questionCard.querySelector(`[data-is-correct="true"]`);
+            correctItem.classList.add('unanswered');
         }
     });
     
-    displayResult(correctCount, wrongAnswers);
+    // Show result summary
+    displayResultSummary(correctCount);
 }
 
-// Display result
-function displayResult(correctCount, wrongAnswers) {
-    document.getElementById('quizContainer').style.display = 'none';
-    document.getElementById('resultContainer').style.display = 'block';
-    
+// Display result summary
+function displayResultSummary(correctCount) {
     const total = currentQuestions.length;
     const percentage = ((correctCount / total) * 100).toFixed(1);
+    const passed = correctCount >= 21; // 21/25 to pass
     
-    let resultHTML = `
-        <div class="score-display">
-            ${correctCount}/${total} câu đúng (${percentage}%)
-        </div>
-    `;
+    alert(`
+🎯 KẾT QUẢ THI
+
+✅ Số câu đúng: ${correctCount}/${total}
+📊 Tỷ lệ: ${percentage}%
+${passed ? '🎉 ĐẠT' : '❌ CHƯA ĐẠT'}
+
+${passed ? 'Chúc mừng bạn!' : 'Hãy ôn tập thêm và thử lại!'}
+    `);
     
-    if (wrongAnswers.length > 0) {
-        resultHTML += '<div class="wrong-answers">';
-        resultHTML += '<h3>📋 Các câu trả lời sai:</h3>';
-        
-        wrongAnswers.forEach(item => {
-            resultHTML += `
-                <div class="wrong-question">
-                    <strong>Câu ${item.number}:</strong> ${item.question}<br>
-                    <span style="color: #dc3545;">❌ Bạn chọn: ${item.userAnswer}</span><br>
-                    <span style="color: #28a745;">✅ Đáp án đúng: ${item.correctAnswer}</span>
-                    ${item.explanation ? `
-                        <div class="explanation">
-                            <strong>💡 Giải thích:</strong> ${item.explanation}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        });
-        
-        resultHTML += '</div>';
-    } else {
-        resultHTML += '<p style="text-align: center; font-size: 1.5em; color: #28a745;">🎉 Chúc mừng! Bạn đã trả lời đúng tất cả!</p>';
+    // Scroll to top to see all answers
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Update progress bar
+function updateProgress() {
+    const answered = Object.keys(userAnswers).length;
+    const total = currentQuestions.length;
+    const percentage = (answered / total) * 100;
+    
+    const progressFill = document.getElementById('progressFill');
+    if (progressFill) {
+        progressFill.style.width = `${percentage}%`;
     }
-    
-    document.getElementById('resultContent').innerHTML = resultHTML;
+}
+
+// Update question counter
+function updateQuestionCounter() {
+    const answered = Object.keys(userAnswers).length;
+    const total = currentQuestions.length;
+    const counter = document.getElementById('questionCounter');
+    if (counter) {
+        counter.textContent = `Đã làm: ${answered} / ${total} câu`;
+    }
 }
 
 // Setup event listeners
 function setupEventListeners() {
     document.getElementById('backBtn').addEventListener('click', () => {
-        document.getElementById('quizContainer').style.display = 'none';
-        document.getElementById('examList').style.display = 'grid';
-        currentExam = null;
-        currentQuestions = [];
-        userAnswers = {};
-        showingAnswers = false;
+        if (isSubmitted || confirm('Bạn có chắc muốn thoát? Dữ liệu sẽ bị mất.')) {
+            document.getElementById('quizContainer').style.display = 'none';
+            document.getElementById('examList').style.display = 'grid';
+            currentExam = null;
+            currentQuestions = [];
+            userAnswers = {};
+            isSubmitted = false;
+        }
     });
     
-    document.getElementById('showAnswersBtn').addEventListener('click', toggleShowAnswers);
     document.getElementById('submitBtn').addEventListener('click', submitExam);
     
     document.getElementById('retryBtn').addEventListener('click', () => {

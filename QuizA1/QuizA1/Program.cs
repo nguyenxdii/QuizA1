@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddDbContext<QuizA1DbContext>(options =>
-    options.UseSqlServer("Server=DIINGUYEN\\\\SQLEXPRESS;Database=QuizA1DB;Trusted_Connection=True;TrustServerCertificate=True;"));
+    options.UseSqlServer("Server=DIINGUYEN\\SQLEXPRESS;Database=QuizA1DB;Trusted_Connection=True;TrustServerCertificate=True;"));
 
 builder.Services.AddCors(options =>
 {
@@ -175,6 +175,167 @@ app.MapPost("/api/questions", async (HttpRequest request, QuizA1DbContext db) =>
             success = true,
             questionId = question.QuestionID,
             message = "Thêm câu hỏi thành công"
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new
+        {
+            success = false,
+            message = $"Lỗi: {ex.Message}"
+        });
+    }
+});
+
+// GET /api/exams/{examId}/questions - Lấy danh sách câu hỏi của đề (cho admin)
+app.MapGet("/api/exams/{examId}/questions", async (int examId, QuizA1DbContext db) =>
+{
+    var questions = await db.ExamQuestions
+        .Where(eq => eq.ExamID == examId)
+        .OrderBy(eq => eq.DisplayOrder)
+        .Select(eq => new
+        {
+            questionId = eq.Question.QuestionID,
+            questionText = eq.Question.QuestionText,
+            hasImage = eq.Question.ImageData != null,
+            explanation = eq.Question.Explanation,
+            answerCount = eq.Question.Answers.Count,
+            displayOrder = eq.DisplayOrder,
+            answers = eq.Question.Answers.Select(a => new
+            {
+                answerId = a.AnswerID,
+                answerText = a.AnswerText,
+                isCorrect = a.IsCorrect
+            }).ToList()
+        })
+        .ToListAsync();
+
+    return Results.Ok(questions);
+});
+
+// GET /api/questions/{questionId} - Lấy chi tiết một câu hỏi (cho edit)
+app.MapGet("/api/questions/{questionId}", async (int questionId, QuizA1DbContext db) =>
+{
+    var question = await db.Questions
+        .Where(q => q.QuestionID == questionId)
+        .Select(q => new
+        {
+            questionId = q.QuestionID,
+            questionText = q.QuestionText,
+            explanation = q.Explanation,
+            hasImage = q.ImageData != null,
+            imageFileName = q.ImageFileName,
+            answers = q.Answers.Select(a => new
+            {
+                answerId = a.AnswerID,
+                answerText = a.AnswerText,
+                isCorrect = a.IsCorrect
+            }).ToList()
+        })
+        .FirstOrDefaultAsync();
+
+    if (question == null)
+        return Results.NotFound(new { message = "Không tìm thấy câu hỏi" });
+
+    return Results.Ok(question);
+});
+
+// PUT /api/questions/{questionId} - Cập nhật câu hỏi
+app.MapPut("/api/questions/{questionId}", async (int questionId, HttpRequest request, QuizA1DbContext db) =>
+{
+    try
+    {
+        var form = await request.ReadFormAsync();
+
+        var question = await db.Questions
+            .Include(q => q.Answers)
+            .FirstOrDefaultAsync(q => q.QuestionID == questionId);
+
+        if (question == null)
+            return Results.NotFound(new { success = false, message = "Không tìm thấy câu hỏi" });
+
+        // Update question
+        question.QuestionText = form["QuestionText"].ToString();
+        question.Explanation = form["Explanation"].ToString();
+
+        // Update image if provided
+        var imageFile = form.Files.GetFile("Image");
+        if (imageFile != null && imageFile.Length > 0)
+        {
+            using var memoryStream = new MemoryStream();
+            await imageFile.CopyToAsync(memoryStream);
+            question.ImageData = memoryStream.ToArray();
+            question.ImageFileName = imageFile.FileName;
+            question.ImageMimeType = imageFile.ContentType;
+        }
+
+        // Delete old answers
+        db.Answers.RemoveRange(question.Answers);
+
+        // Add new answers
+        var answer1 = form["Answer1"].ToString();
+        var answer2 = form["Answer2"].ToString();
+        var answer3 = form["Answer3"].ToString();
+        var answer4 = form["Answer4"].ToString();
+        var correctAnswerIndex = int.Parse(form["CorrectAnswerIndex"].ToString());
+
+        var answers = new List<Answer>();
+        if (!string.IsNullOrWhiteSpace(answer1))
+            answers.Add(new Answer { QuestionID = questionId, AnswerText = answer1, IsCorrect = correctAnswerIndex == 1 });
+        if (!string.IsNullOrWhiteSpace(answer2))
+            answers.Add(new Answer { QuestionID = questionId, AnswerText = answer2, IsCorrect = correctAnswerIndex == 2 });
+        if (!string.IsNullOrWhiteSpace(answer3))
+            answers.Add(new Answer { QuestionID = questionId, AnswerText = answer3, IsCorrect = correctAnswerIndex == 3 });
+        if (!string.IsNullOrWhiteSpace(answer4))
+            answers.Add(new Answer { QuestionID = questionId, AnswerText = answer4, IsCorrect = correctAnswerIndex == 4 });
+
+        db.Answers.AddRange(answers);
+        await db.SaveChangesAsync();
+
+        return Results.Ok(new
+        {
+            success = true,
+            message = "Cập nhật câu hỏi thành công"
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new
+        {
+            success = false,
+            message = $"Lỗi: {ex.Message}"
+        });
+    }
+});
+
+// DELETE /api/questions/{questionId} - Xóa câu hỏi
+app.MapDelete("/api/questions/{questionId}", async (int questionId, QuizA1DbContext db) =>
+{
+    try
+    {
+        var question = await db.Questions
+            .Include(q => q.Answers)
+            .Include(q => q.ExamQuestions)
+            .FirstOrDefaultAsync(q => q.QuestionID == questionId);
+
+        if (question == null)
+            return Results.NotFound(new { success = false, message = "Không tìm thấy câu hỏi" });
+
+        // Remove answers
+        db.Answers.RemoveRange(question.Answers);
+
+        // Remove exam questions
+        db.ExamQuestions.RemoveRange(question.ExamQuestions);
+
+        // Remove question
+        db.Questions.Remove(question);
+
+        await db.SaveChangesAsync();
+
+        return Results.Ok(new
+        {
+            success = true,
+            message = "Xóa câu hỏi thành công"
         });
     }
     catch (Exception ex)

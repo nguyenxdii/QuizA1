@@ -9,32 +9,44 @@
 <body>
     <div class="container">
         <header>
-            <h1>⚙️ Quản Lý Câu Hỏi</h1>
-            <p class="subtitle">Thêm câu hỏi mới vào ngân hàng đề thi</p>
-            <a href="index.html" class="home-link">← Về trang chủ</a>
+            <h1>⚙️ QUẢN LÝ CÂU HỎI</h1>
+            <p class="subtitle">Chọn đề thi để quản lý câu hỏi</p>
+            <a href="index.html" class="home-link">← Về trang thi</a>
         </header>
 
-        <div class="admin-container">
-            <form id="questionForm" class="question-form">
-                <div class="form-group">
-                    <label for="examSelect">Chọn đề thi:</label>
-                    <select id="examSelect" name="ExamID" required>
-                        <option value="">-- Chọn đề --</option>
-                        <option value="1">Đề 1</option>
-                        <option value="2">Đề 2</option>
-                        <option value="3">Đề 3</option>
-                        <option value="4">Đề 4</option>
-                        <option value="5">Đề 5</option>
-                        <option value="6">Đề 6</option>
-                        <option value="7">Đề 7</option>
-                        <option value="8">Đề 8</option>
-                        <option value="9">Đề 9</option>
-                        <option value="10">Đề 10</option>
-                    </select>
-                </div>
+        <!-- Danh sách đề thi -->
+        <div id="examList" class="exam-list">
+            <!-- Sẽ được load bằng JavaScript -->
+        </div>
 
+        <!-- Khu vực quản lý câu hỏi -->
+        <div id="adminContainer" class="admin-container" style="display: none;">
+            <div class="admin-toolbar">
+                <h2 id="examTitle"></h2>
+                <div class="toolbar-buttons">
+                    <button id="addBtn" class="btn-add">➕ Thêm câu hỏi</button>
+                    <button id="backBtn" class="btn-back">← Quay lại</button>
+                </div>
+            </div>
+
+            <!-- Danh sách câu hỏi -->
+            <div id="questionsList" class="questions-list">
+                <!-- Sẽ được load bằng JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Add/Edit Question -->
+    <div id="questionModal" class="modal">
+        <div class="modal-content">
+            <form id="questionForm" class="question-form">
+                <h3 id="formTitle">Thêm câu hỏi mới</h3>
+                
+                <input type="hidden" id="questionId" name="questionId">
+                <input type="hidden" id="examId" name="examId">
+                
                 <div class="form-group">
-                    <label for="questionText">Câu hỏi:</label>
+                    <label for="questionText">Câu hỏi: *</label>
                     <textarea id="questionText" name="QuestionText" rows="4" required></textarea>
                 </div>
 
@@ -44,7 +56,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="imageUpload">Ảnh minh họa (tùy chọn):</label>
+                    <label for="imageUpload">Ảnh minh họa:</label>
                     <input type="file" id="imageUpload" name="Image" accept="image/*">
                     <div id="imagePreview" class="image-preview"></div>
                 </div>
@@ -54,32 +66,32 @@
                     
                     <div class="answer-group">
                         <input type="radio" name="correctAnswer" value="1" id="correct1" required>
-                        <input type="text" name="Answer1" id="answer1" placeholder="Đáp án 1" required>
-                        <label for="correct1" class="correct-label">Đáp án đúng</label>
+                        <input type="text" name="Answer1" id="answer1" placeholder="Đáp án 1 *" required>
+                        <label for="correct1">Đúng</label>
                     </div>
 
                     <div class="answer-group">
                         <input type="radio" name="correctAnswer" value="2" id="correct2">
-                        <input type="text" name="Answer2" id="answer2" placeholder="Đáp án 2" required>
-                        <label for="correct2" class="correct-label">Đáp án đúng</label>
+                        <input type="text" name="Answer2" id="answer2" placeholder="Đáp án 2 *" required>
+                        <label for="correct2">Đúng</label>
                     </div>
 
                     <div class="answer-group">
                         <input type="radio" name="correctAnswer" value="3" id="correct3">
                         <input type="text" name="Answer3" id="answer3" placeholder="Đáp án 3">
-                        <label for="correct3" class="correct-label">Đáp án đúng</label>
+                        <label for="correct3">Đúng</label>
                     </div>
 
                     <div class="answer-group">
                         <input type="radio" name="correctAnswer" value="4" id="correct4">
                         <input type="text" name="Answer4" id="answer4" placeholder="Đáp án 4">
-                        <label for="correct4" class="correct-label">Đáp án đúng</label>
+                        <label for="correct4">Đúng</label>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="submit-btn">✅ Thêm câu hỏi</button>
-                    <button type="reset" class="reset-btn">🔄 Làm mới</button>
+                    <button type="submit" class="btn-save">💾 Lưu</button>
+                    <button type="button" class="btn-cancel" onclick="closeModal()">❌ Hủy</button>
                 </div>
             </form>
 

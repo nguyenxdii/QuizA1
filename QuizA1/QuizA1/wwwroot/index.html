@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏍️ Thi Trắc Nghiệm Giấy Phép Lái Xe A1</h1>
+            <h1>📘 CHẾ ĐỘ HỌC TẬP TƯƠNG TÁC 📘</h1>
             <p class="subtitle">Chọn đề thi để bắt đầu làm bài</p>
         </header>
 
@@ -21,14 +21,20 @@
         <!-- Khu vực làm bài thi -->
         <div id="quizContainer" class="quiz-container" style="display: none;">
             <div class="quiz-header">
-                <h2 id="examTitle"></h2>
+                <div class="quiz-info">
+                    <h2 id="examTitle"></h2>
+                    <span class="question-counter" id="questionCounter">Câu 1 / 25</span>
+                </div>
                 <button id="backBtn" class="back-btn">← Quay lại</button>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
             </div>
 
             <div id="questionsContainer"></div>
 
             <div class="quiz-actions">
-                <button id="showAnswersBtn" class="show-answers-btn">👁️ Hiện đáp án</button>
                 <button id="submitBtn" class="submit-btn">📝 Nộp bài</button>
             </div>
         </div>
@@ -39,7 +45,7 @@
                 <h2>📊 Kết Quả Thi</h2>
             </div>
             <div id="resultContent"></div>
-            <button id="retryBtn" class="retry-btn">🔄 Làm lại</button>
+            <button id="retryBtn" class="retry-btn">🔄 Chọn đề khác</button>
         </div>
     </div>
 
