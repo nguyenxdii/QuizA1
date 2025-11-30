@@ -47,6 +47,10 @@ function confirmAndLoadExam(examId, examName) {
 async function loadExam(examId, examName) {
     try {
         const response = await fetch(`${API_BASE}/exams/${examId}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
         const exam = await response.json();
         
         currentExam = exam;

@@ -45,34 +45,42 @@ app.MapGet("/api/exams", async (QuizA1DbContext db) =>
 // GET /api/exams/{examId} - Lấy toàn bộ câu hỏi của đề
 app.MapGet("/api/exams/{examId}", async (int examId, QuizA1DbContext db) =>
 {
-    var exam = await db.Exams
-        .Where(e => e.ExamID == examId)
-        .Select(e => new
-        {
-            examId = e.ExamID,
-            examName = e.ExamName,
-            questions = e.ExamQuestions
-                .OrderBy(eq => eq.DisplayOrder)
-                .Select(eq => new
-                {
-                    questionId = eq.Question.QuestionID,
-                    questionText = eq.Question.QuestionText,
-                    hasImage = eq.Question.ImageData != null,
-                    explanation = eq.Question.Explanation,
-                    answers = eq.Question.Answers.Select(a => new
+    try
+    {
+        var exam = await db.Exams
+            .Where(e => e.ExamID == examId)
+            .Select(e => new
+            {
+                examId = e.ExamID,
+                examName = e.ExamName,
+                questions = e.ExamQuestions
+                    .OrderBy(eq => eq.DisplayOrder ?? 0)
+                    .Select(eq => new
                     {
-                        answerId = a.AnswerID,
-                        answerText = a.AnswerText,
-                        isCorrect = a.IsCorrect
+                        questionId = eq.Question.QuestionID,
+                        questionText = eq.Question.QuestionText,
+                        hasImage = eq.Question.ImageData != null,
+                        explanation = eq.Question.Explanation,
+                        answers = eq.Question.Answers.Select(a => new
+                        {
+                            answerId = a.AnswerID,
+                            answerText = a.AnswerText,
+                            isCorrect = a.IsCorrect
+                        }).ToList()
                     }).ToList()
-                }).ToList()
-        })
-        .FirstOrDefaultAsync();
+            })
+            .FirstOrDefaultAsync();
 
-    if (exam == null)
-        return Results.NotFound(new { message = "Không tìm thấy đề thi" });
+        if (exam == null)
+            return Results.NotFound(new { message = "Không tìm thấy đề thi" });
 
-    return Results.Ok(exam);
+        return Results.Ok(exam);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error loading exam {examId}: {ex}");
+        return Results.Problem($"Lỗi server: {ex.Message}");
+    }
 });
 
 // GET /api/questions/{questionId}/image - Lấy ảnh câu hỏi
