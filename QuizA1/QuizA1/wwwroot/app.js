@@ -135,8 +135,6 @@ function createQuestionCard(question, index) {
 
 // Select answer
 function selectAnswer(questionId, answerId, isCorrect) {
-    if (isSubmitted) return; // Không cho chọn sau khi nộp bài
-    
     userAnswers[questionId] = { answerId, isCorrect };
 
     // Highlight selected answer

@@ -4,9 +4,20 @@ using QuizA1.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// Add services to the container with a resilient provider fallback
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<QuizA1DbContext>(options =>
-    options.UseSqlServer("Server=DIINGUYEN\\SQLEXPRESS;Database=QuizA1DB;Trusted_Connection=True;TrustServerCertificate=True;"));
+{
+    if (!string.IsNullOrWhiteSpace(connectionString))
+    {
+        options.UseSqlServer(connectionString);
+    }
+    else
+    {
+        options.UseSqlite("Data Source=quiz.db");
+    }
+});
 
 builder.Services.AddCors(options =>
 {
@@ -19,6 +30,18 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Ensure database exists and seed fallback data to avoid empty states
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<QuizA1DbContext>();
+    db.Database.EnsureCreated();
+
+    if (!db.Exams.Any())
+    {
+        SeedFallbackData(db);
+    }
+}
 
 // Configure the HTTP request pipeline
 app.UseCors();
@@ -321,3 +344,56 @@ app.MapDelete("/api/exams/{examId}/questions/{questionId}", async (int examId, i
 app.MapFallbackToFile("/index.html");
 
 app.Run();
+
+// Local fallback seed so the UI still works when no SQL Server is available
+static void SeedFallbackData(QuizA1DbContext db)
+{
+    var exam = new Exam
+    {
+        ExamName = "Đề thi số 1",
+        Description = "Bộ câu hỏi mẫu",
+        CreatedAt = DateTime.Now,
+        IsActive = true
+    };
+
+    var question1 = new Question
+    {
+        QuestionText = "Tại nơi có vạch kẻ đường cho người đi bộ, xe nào cần nhường đường?",
+        Explanation = "Luôn ưu tiên người đi bộ tại vạch qua đường.",
+        IsActive = true,
+        CreatedAt = DateTime.Now,
+        Answers = new List<Answer>
+        {
+            new() { AnswerText = "Xe thô sơ", IsCorrect = false },
+            new() { AnswerText = "Xe cơ giới", IsCorrect = false },
+            new() { AnswerText = "Cả xe thô sơ và xe cơ giới", IsCorrect = true },
+            new() { AnswerText = "Không xe nào", IsCorrect = false }
+        }
+    };
+
+    var question2 = new Question
+    {
+        QuestionText = "Trên đường không phân làn, xe nào phải đi sát bên phải?",
+        Explanation = "Xe thô sơ đi sát bên phải để đảm bảo an toàn giao thông.",
+        IsActive = true,
+        CreatedAt = DateTime.Now,
+        Answers = new List<Answer>
+        {
+            new() { AnswerText = "Xe cơ giới", IsCorrect = false },
+            new() { AnswerText = "Xe thô sơ", IsCorrect = true },
+            new() { AnswerText = "Cả hai loại", IsCorrect = false },
+            new() { AnswerText = "Không xe nào", IsCorrect = false }
+        }
+    };
+
+    db.Exams.Add(exam);
+    db.Questions.AddRange(question1, question2);
+    db.SaveChanges();
+
+    db.ExamQuestions.AddRange(
+        new ExamQuestion { ExamID = exam.ExamID, QuestionID = question1.QuestionID, DisplayOrder = 1 },
+        new ExamQuestion { ExamID = exam.ExamID, QuestionID = question2.QuestionID, DisplayOrder = 2 }
+    );
+
+    db.SaveChanges();
+}

@@ -281,6 +281,37 @@ header h1 {
     box-shadow: 0 5px 16px rgba(0, 0, 0, 0.2);
 }
 
+.question-card.unanswered {
+    border-left-color: #17a2b8;
+    background: #e8f7fb;
+}
+
+/* Per-question actions */
+.question-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.toggle-answer-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.25s ease;
+}
+
+.toggle-answer-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.2);
+}
+
 /* Answer Status */
 .answer-status {
     margin-top: 12px;
@@ -516,34 +547,6 @@ header h1 {
 .notification.error { background: #e74c3c; }
 .notification.info { background: #3498db; }
 
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal.show {
-    display: flex;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 8px;
-    padding: 30px;
-    max-width: 800px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
     .container {
@@ -577,6 +580,15 @@ header h1 {
 
     .question-item {
         flex-direction: column;
+    }
+
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .panel-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 
     .admin-layout {
