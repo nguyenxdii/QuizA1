@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddDbContext<QuizA1DbContext>(options =>
-    options.UseSqlServer("Server=DIINGUYEN\\\\SQLEXPRESS;Database=QuizA1DB;Trusted_Connection=True;TrustServerCertificate=True;"));
+    options.UseSqlServer("Server=DIINGUYEN\\SQLEXPRESS;Database=QuizA1DB;Trusted_Connection=True;TrustServerCertificate=True;"));
 
 builder.Services.AddCors(options =>
 {

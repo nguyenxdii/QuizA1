@@ -55,6 +55,61 @@ function bindEvents() {
         }
         await saveQuestion();
     });
+    
+    // Add button
+    document.getElementById('addBtn').addEventListener('click', () => {
+        openModalForAdd();
+    });
+}
+
+// Open modal for adding new question
+function openModalForAdd() {
+    editingQuestionId = null;
+    document.getElementById('formTitle').textContent = 'Thêm câu hỏi mới';
+    document.getElementById('questionForm').reset();
+    document.getElementById('imagePreview').innerHTML = '';
+    document.getElementById('questionId').value = '';
+    document.getElementById('examId').value = currentExamId;
+    document.getElementById('questionModal').classList.add('show');
+}
+
+// Edit question
+async function editQuestion(questionId) {
+    try {
+        const response = await fetch(`${API_BASE}/questions/${questionId}`);
+        const question = await response.json();
+        
+        editingQuestionId = questionId;
+        document.getElementById('formTitle').textContent = 'Sửa câu hỏi';
+        
+        // Fill form
+        document.getElementById('questionId').value = questionId;
+        document.getElementById('questionText').value = question.questionText;
+        document.getElementById('explanation').value = question.explanation || '';
+        
+        // Fill answers
+        question.answers.forEach((answer, index) => {
+            const answerInput = document.getElementById(`answer${index + 1}`);
+            if (answerInput) {
+                answerInput.value = answer.answerText;
+            }
+            
+            if (answer.isCorrect) {
+                document.getElementById(`correct${index + 1}`).checked = true;
+            }
+        });
+        
+        // Show image if exists
+        if (question.hasImage) {
+            document.getElementById('imagePreview').innerHTML = 
+                `<img src="${API_BASE}/questions/${questionId}/image" alt="Current image">`;
+        }
+        
+        document.getElementById('questionModal').classList.add('show');
+    } catch (error) {
+        console.error('Lỗi khi tải câu hỏi:', error);
+        alert('Không thể tải thông tin câu hỏi!');
+    }
 }
 
 async function loadExams() {

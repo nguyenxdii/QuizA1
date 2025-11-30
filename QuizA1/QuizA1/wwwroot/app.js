@@ -79,6 +79,8 @@ function displayExam(examName) {
         const questionCard = createQuestionCard(question, index);
         container.appendChild(questionCard);
     });
+    
+    updateQuestionCounter();
 }
 
 // Create question card
@@ -88,8 +90,10 @@ function createQuestionCard(question, index) {
     card.id = `question-${question.questionId}`;
     
     let html = `
-        <div class="question-number">Câu ${index + 1}</div>
-        <div class="question-text">${question.questionText}</div>
+        <div class="question-header">
+            <div class="question-number">Câu ${index + 1}:</div>
+            <div class="question-text">${question.questionText}</div>
+        </div>
     `;
     
     // Add image if exists
@@ -104,7 +108,7 @@ function createQuestionCard(question, index) {
     }
     
     html += '<ul class="answers-list">';
-    answers.forEach(answer => {
+    answers.forEach((answer, idx) => {
         html += `
             <li class="answer-item" data-answer-id="${answer.answerId}" data-is-correct="${answer.isCorrect}" onclick="handleAnswerClick(${question.questionId}, ${answer.answerId}, ${answer.isCorrect})">
                 <input type="radio"
@@ -131,6 +135,8 @@ function createQuestionCard(question, index) {
 
 // Select answer
 function selectAnswer(questionId, answerId, isCorrect) {
+    if (isSubmitted) return; // Không cho chọn sau khi nộp bài
+    
     userAnswers[questionId] = { answerId, isCorrect };
 
     // Highlight selected answer
