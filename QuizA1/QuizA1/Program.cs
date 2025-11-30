@@ -187,6 +187,137 @@ app.MapPost("/api/questions", async (HttpRequest request, QuizA1DbContext db) =>
     }
 });
 
-app.MapFallback(() => Results.Redirect("/index.html"));
+// GET /api/questions/{questionId} - Lấy chi tiết câu hỏi cho trang admin
+app.MapGet("/api/questions/{questionId}", async (int questionId, QuizA1DbContext db) =>
+{
+    var question = await db.Questions
+        .Where(q => q.QuestionID == questionId)
+        .Select(q => new
+        {
+            questionId = q.QuestionID,
+            questionText = q.QuestionText,
+            explanation = q.Explanation,
+            hasImage = q.ImageData != null,
+            answers = q.Answers
+                .OrderBy(a => a.AnswerID)
+                .Select(a => new
+                {
+                    answerId = a.AnswerID,
+                    answerText = a.AnswerText,
+                    isCorrect = a.IsCorrect
+                }).ToList()
+        })
+        .FirstOrDefaultAsync();
+
+    if (question == null)
+    {
+        return Results.NotFound(new { success = false, message = "Không tìm thấy câu hỏi" });
+    }
+
+    return Results.Ok(question);
+});
+
+// PUT /api/questions/{questionId} - Cập nhật câu hỏi và đáp án
+app.MapPut("/api/questions/{questionId}", async (int questionId, HttpRequest request, QuizA1DbContext db) =>
+{
+    try
+    {
+        var question = await db.Questions.Include(q => q.Answers)
+            .FirstOrDefaultAsync(q => q.QuestionID == questionId);
+
+        if (question == null)
+        {
+            return Results.NotFound(new { success = false, message = "Không tìm thấy câu hỏi" });
+        }
+
+        var form = await request.ReadFormAsync();
+
+        question.QuestionText = form["QuestionText"].ToString();
+        question.Explanation = form["Explanation"].ToString();
+        question.IsActive = true;
+        question.CreatedAt = DateTime.Now;
+
+        // Xử lý ảnh nếu gửi kèm
+        var imageFile = form.Files.GetFile("Image");
+        if (imageFile != null && imageFile.Length > 0)
+        {
+            using var memoryStream = new MemoryStream();
+            await imageFile.CopyToAsync(memoryStream);
+            question.ImageData = memoryStream.ToArray();
+            question.ImageFileName = imageFile.FileName;
+            question.ImageMimeType = imageFile.ContentType;
+        }
+
+        // Cập nhật đáp án
+        db.Answers.RemoveRange(question.Answers);
+
+        var correctIndex = int.Parse(form["CorrectAnswerIndex"].ToString());
+        var answers = new List<Answer>();
+
+        var rawAnswers = new[]
+        {
+            form["Answer1"].ToString(),
+            form["Answer2"].ToString(),
+            form["Answer3"].ToString(),
+            form["Answer4"].ToString()
+        };
+
+        for (int i = 0; i < rawAnswers.Length; i++)
+        {
+            if (!string.IsNullOrWhiteSpace(rawAnswers[i]))
+            {
+                answers.Add(new Answer
+                {
+                    QuestionID = question.QuestionID,
+                    AnswerText = rawAnswers[i],
+                    IsCorrect = correctIndex == i + 1
+                });
+            }
+        }
+
+        db.Answers.AddRange(answers);
+
+        await db.SaveChangesAsync();
+
+        return Results.Ok(new { success = true, message = "Cập nhật câu hỏi thành công" });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { success = false, message = ex.Message });
+    }
+});
+
+// DELETE /api/exams/{examId}/questions/{questionId} - Xóa câu hỏi khỏi đề thi
+app.MapDelete("/api/exams/{examId}/questions/{questionId}", async (int examId, int questionId, QuizA1DbContext db) =>
+{
+    try
+    {
+        var examQuestion = await db.ExamQuestions.FirstOrDefaultAsync(eq => eq.ExamID == examId && eq.QuestionID == questionId);
+        if (examQuestion == null)
+        {
+            return Results.NotFound(new { success = false, message = "Không tìm thấy câu hỏi trong đề thi" });
+        }
+
+        var question = await db.Questions.Include(q => q.Answers)
+            .FirstOrDefaultAsync(q => q.QuestionID == questionId);
+
+        if (question != null)
+        {
+            db.Answers.RemoveRange(question.Answers);
+            db.Questions.Remove(question);
+        }
+
+        db.ExamQuestions.Remove(examQuestion);
+        await db.SaveChangesAsync();
+
+        return Results.Ok(new { success = true, message = "Đã xóa câu hỏi" });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { success = false, message = ex.Message });
+    }
+});
+
+app.MapFallbackToFile("/index.html");
 
 app.Run();
