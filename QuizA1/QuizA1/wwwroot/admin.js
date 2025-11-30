@@ -1,125 +1,59 @@
-// Admin page JavaScript
 const API_BASE = '/api';
-let currentExamId = null;
+let selectedExamId = null;
+let selectedExamName = '';
 let editingQuestionId = null;
 
+const examGrid = document.getElementById('examGrid');
+const questionList = document.getElementById('questionList');
+const addQuestionBtn = document.getElementById('addQuestionBtn');
+const deleteExamBtn = document.getElementById('deleteExamBtn');
+const refreshExamsBtn = document.getElementById('refreshExams');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const questionForm = document.getElementById('questionForm');
+const notification = document.getElementById('notification');
+
+const fields = {
+    questionText: document.getElementById('questionText'),
+    explanation: document.getElementById('explanation'),
+    answers: [
+        document.getElementById('answer1'),
+        document.getElementById('answer2'),
+        document.getElementById('answer3'),
+        document.getElementById('answer4')
+    ],
+    correctRadios: [
+        document.getElementById('correct1'),
+        document.getElementById('correct2'),
+        document.getElementById('correct3'),
+        document.getElementById('correct4')
+    ],
+    image: document.getElementById('imageUpload'),
+    preview: document.getElementById('imagePreview'),
+    editingId: document.getElementById('editingQuestionId')
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+    bindEvents();
     loadExams();
-    setupFormHandlers();
 });
 
-// Load danh sách đề thi
-async function loadExams() {
-    try {
-        const response = await fetch(`${API_BASE}/exams`);
-        const exams = await response.json();
-        
-        const examList = document.getElementById('examList');
-        examList.innerHTML = '';
-        
-        exams.forEach(exam => {
-            const btn = document.createElement('button');
-            btn.className = 'exam-btn';
-            btn.textContent = exam.examName;
-            btn.onclick = () => loadQuestions(exam.examId, exam.examName);
-            examList.appendChild(btn);
-        });
-    } catch (error) {
-        console.error('Lỗi khi tải danh sách đề:', error);
-        alert('Không thể tải danh sách đề thi!');
-    }
-}
+function bindEvents() {
+    addQuestionBtn.addEventListener('click', () => openModal());
+    deleteExamBtn.addEventListener('click', () => deleteSelectedExam());
+    refreshExamsBtn.addEventListener('click', loadExams);
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('resetForm').addEventListener('click', resetForm);
 
-// Load danh sách câu hỏi của đề
-async function loadQuestions(examId, examName) {
-    try {
-        const response = await fetch(`${API_BASE}/exams/${examId}/questions`);
-        const questions = await response.json();
-        
-        currentExamId = examId;
-        
-        document.getElementById('examList').style.display = 'none';
-        document.getElementById('adminContainer').style.display = 'block';
-        document.getElementById('examTitle').textContent = examName;
-        
-        displayQuestions(questions);
-    } catch (error) {
-        console.error('Lỗi khi tải câu hỏi:', error);
-        alert('Không thể tải danh sách câu hỏi!');
-    }
-}
+    fields.image.addEventListener('change', handleImagePreview);
 
-// Display questions list
-function displayQuestions(questions) {
-    const container = document.getElementById('questionsList');
-    container.innerHTML = '';
-    
-    if (questions.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">Chưa có câu hỏi nào. Hãy thêm câu hỏi mới!</p>';
-        return;
-    }
-    
-    questions.forEach((question, index) => {
-        const item = document.createElement('div');
-        item.className = 'question-item';
-        
-        const correctAnswer = question.answers.find(a => a.isCorrect);
-        
-        item.innerHTML = `
-            <div class="question-content">
-                <h4>Câu ${index + 1}</h4>
-                <p>${question.questionText}</p>
-                ${question.explanation ? `<p style="font-style: italic; color: #666;">Giải thích: ${question.explanation}</p>` : ''}
-                <div class="question-meta">
-                    <span>📄 ${question.answerCount} đáp án</span>
-                    ${question.hasImage ? '<span>🖼️ Có ảnh</span>' : ''}
-                    <span>✅ Đáp án đúng: ${correctAnswer ? correctAnswer.answerText : 'N/A'}</span>
-                </div>
-            </div>
-            <div class="question-actions">
-                <button class="btn-edit" onclick="editQuestion(${question.questionId})">✏️ Sửa</button>
-                <button class="btn-delete" onclick="deleteQuestion(${question.questionId})">🗑️ Xóa</button>
-            </div>
-        `;
-        
-        container.appendChild(item);
-    });
-}
-
-// Setup form handlers
-function setupFormHandlers() {
-    const form = document.getElementById('questionForm');
-    const imageUpload = document.getElementById('imageUpload');
-    
-    // Image preview
-    imageUpload.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const preview = document.getElementById('imagePreview');
-                preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    
-    // Form submit
-    form.addEventListener('submit', async (e) => {
+    questionForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        if (editingQuestionId) {
-            await updateQuestion();
-        } else {
-            await createQuestion();
+        if (!selectedExamId) {
+            showNotification('Vui lòng chọn đề thi trước khi thêm/sửa câu hỏi.', 'error');
+            return;
         }
-    });
-    
-    // Back button
-    document.getElementById('backBtn').addEventListener('click', () => {
-        document.getElementById('adminContainer').style.display = 'none';
-        document.getElementById('examList').style.display = 'grid';
-        currentExamId = null;
+        await saveQuestion();
     });
     
     // Add button
@@ -178,137 +112,227 @@ async function editQuestion(questionId) {
     }
 }
 
-// Create new question
-async function createQuestion() {
+async function loadExams() {
+    setExamGridState('loading');
     try {
-        const formData = new FormData();
-        
-        formData.append('ExamID', currentExamId);
-        formData.append('QuestionText', document.getElementById('questionText').value);
-        formData.append('Explanation', document.getElementById('explanation').value);
-        formData.append('Answer1', document.getElementById('answer1').value);
-        formData.append('Answer2', document.getElementById('answer2').value);
-        formData.append('Answer3', document.getElementById('answer3').value || '');
-        formData.append('Answer4', document.getElementById('answer4').value || '');
-        
-        const correctAnswer = document.querySelector('input[name="correctAnswer"]:checked');
-        if (!correctAnswer) {
-            showNotification('Vui lòng chọn đáp án đúng!', 'error');
+        const res = await fetch(`${API_BASE}/exams`);
+        if (!res.ok) throw new Error('Không thể tải danh sách đề thi');
+        const exams = await res.json();
+
+        if (!Array.isArray(exams) || exams.length === 0) {
+            examGrid.innerHTML = '<p class="muted">Chưa có đề thi nào.</p>';
             return;
         }
-        formData.append('CorrectAnswerIndex', correctAnswer.value);
-        
-        const imageFile = document.getElementById('imageUpload').files[0];
-        if (imageFile) {
-            formData.append('Image', imageFile);
-        }
-        
-        const response = await fetch(`${API_BASE}/questions`, {
-            method: 'POST',
-            body: formData
+
+        examGrid.innerHTML = '';
+        exams.forEach(exam => {
+            const btn = document.createElement('button');
+            btn.className = `exam-card ${selectedExamId === exam.examId ? 'active' : ''}`;
+            btn.textContent = exam.examName;
+            btn.onclick = () => loadExamQuestions(exam.examId, exam.examName);
+            examGrid.appendChild(btn);
         });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showNotification('✅ Thêm câu hỏi thành công!', 'success');
-            setTimeout(() => {
-                closeModal();
-                loadQuestions(currentExamId, document.getElementById('examTitle').textContent);
-            }, 1500);
-        } else {
-            showNotification(`❌ ${result.message}`, 'error');
-        }
     } catch (error) {
-        console.error('Error:', error);
-        showNotification('❌ Có lỗi xảy ra!', 'error');
+        console.error(error);
+        examGrid.innerHTML = '<p class="error-text">Không thể tải danh sách đề thi!</p>';
     }
 }
 
-// Update existing question
-async function updateQuestion() {
-    try {
-        const formData = new FormData();
-        
-        formData.append('QuestionText', document.getElementById('questionText').value);
-        formData.append('Explanation', document.getElementById('explanation').value);
-        formData.append('Answer1', document.getElementById('answer1').value);
-        formData.append('Answer2', document.getElementById('answer2').value);
-        formData.append('Answer3', document.getElementById('answer3').value || '');
-        formData.append('Answer4', document.getElementById('answer4').value || '');
-        
-        const correctAnswer = document.querySelector('input[name="correctAnswer"]:checked');
-        if (!correctAnswer) {
-            showNotification('Vui lòng chọn đáp án đúng!', 'error');
-            return;
-        }
-        formData.append('CorrectAnswerIndex', correctAnswer.value);
-        
-        const imageFile = document.getElementById('imageUpload').files[0];
-        if (imageFile) {
-            formData.append('Image', imageFile);
-        }
-        
-        const response = await fetch(`${API_BASE}/questions/${editingQuestionId}`, {
-            method: 'PUT',
-            body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showNotification('✅ Cập nhật câu hỏi thành công!', 'success');
-            setTimeout(() => {
-                closeModal();
-                loadQuestions(currentExamId, document.getElementById('examTitle').textContent);
-            }, 1500);
-        } else {
-            showNotification(`❌ ${result.message}`, 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('❌ Có lỗi xảy ra!', 'error');
+function setExamGridState(state) {
+    if (state === 'loading') {
+        examGrid.innerHTML = '<p class="muted">Đang tải danh sách đề...</p>';
     }
 }
 
-// Delete question
-async function deleteQuestion(questionId) {
-    if (!confirm('Bạn có chắc muốn xóa câu hỏi này không?')) {
+async function loadExamQuestions(examId, examName) {
+    selectedExamId = examId;
+    selectedExamName = examName;
+    addQuestionBtn.disabled = false;
+    deleteExamBtn.disabled = false;
+    document.getElementById('selectedExamTitle').textContent = `Đề thi: ${examName}`;
+    questionList.classList.remove('empty-state');
+    questionList.innerHTML = '<p class="muted">Đang tải câu hỏi...</p>';
+
+    try {
+        const res = await fetch(`${API_BASE}/exams/${examId}`);
+        if (!res.ok) throw new Error('Không thể tải danh sách câu hỏi');
+        const exam = await res.json();
+
+        renderQuestionList(exam.questions || []);
+        document.getElementById('questionCount').textContent = `${exam.questions.length} câu hỏi`;
+    } catch (error) {
+        console.error(error);
+        questionList.innerHTML = '<p class="error-text">Không thể tải danh sách câu hỏi!</p>';
+        document.getElementById('questionCount').textContent = 'Có lỗi khi tải câu hỏi';
+    }
+
+    loadExams(); // refresh highlight state
+}
+
+function renderQuestionList(questions) {
+    if (!questions.length) {
+        questionList.innerHTML = '<p class="muted">Đề này chưa có câu hỏi.</p>';
         return;
     }
-    
-    try {
-        const response = await fetch(`${API_BASE}/questions/${questionId}`, {
-            method: 'DELETE'
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert('✅ Xóa câu hỏi thành công!');
-            loadQuestions(currentExamId, document.getElementById('examTitle').textContent);
-        } else {
-            alert(`❌ ${result.message}`);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('❌ Có lỗi xảy ra khi xóa câu hỏi!');
+
+    questionList.innerHTML = '';
+
+    questions.forEach((q, index) => {
+        const card = document.createElement('div');
+        card.className = 'admin-question-card';
+
+        const answersHtml = q.answers.map(a => `
+            <li class="admin-answer ${a.isCorrect ? 'correct' : ''}">
+                ${a.answerText} ${a.isCorrect ? '<span class="badge">Đúng</span>' : ''}
+            </li>`).join('');
+
+        card.innerHTML = `
+            <div class="question-head">
+                <div>
+                    <div class="question-number">Câu ${index + 1}</div>
+                    <p class="question-text">${q.questionText}</p>
+                </div>
+                <div class="question-actions">
+                    <button class="icon-btn" onclick="openModal(${q.questionId})">✏️ Sửa</button>
+                    <button class="icon-btn danger" onclick="deleteQuestion(${q.questionId})">🗑️ Xóa</button>
+                </div>
+            </div>
+            ${q.hasImage ? `<img src="${API_BASE}/questions/${q.questionId}/image" class="question-image" alt="Hình minh họa">` : ''}
+            <ul class="admin-answer-list">${answersHtml}</ul>
+            ${q.explanation ? `<div class="explanation"><strong>Giải thích:</strong> ${q.explanation}</div>` : ''}
+        `;
+
+        questionList.appendChild(card);
+    });
+}
+
+function openModal(questionId = null) {
+    modalOverlay.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    editingQuestionId = questionId;
+    fields.editingId.value = questionId || '';
+
+    if (questionId) {
+        modalTitle.textContent = 'Chỉnh sửa câu hỏi';
+        populateForm(questionId);
+    } else {
+        modalTitle.textContent = 'Thêm câu hỏi mới';
+        resetForm();
     }
 }
 
-// Close modal
 function closeModal() {
-    document.getElementById('questionModal').classList.remove('show');
-    document.getElementById('questionForm').reset();
-    document.getElementById('imagePreview').innerHTML = '';
-    document.getElementById('notification').style.display = 'none';
-    editingQuestionId = null;
+    modalOverlay.classList.add('hidden');
+    document.body.classList.remove('modal-open');
 }
 
-// Show notification
-function showNotification(message, type) {
-    const notification = document.getElementById('notification');
+function resetForm() {
+    questionForm.reset();
+    fields.preview.innerHTML = '';
+    editingQuestionId = null;
+    fields.editingId.value = '';
+}
+
+function handleImagePreview(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        fields.preview.innerHTML = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        fields.preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function populateForm(questionId) {
+    try {
+        const res = await fetch(`${API_BASE}/questions/${questionId}`);
+        if (!res.ok) throw new Error('Không tìm thấy câu hỏi');
+        const data = await res.json();
+
+        fields.questionText.value = data.questionText || '';
+        fields.explanation.value = data.explanation || '';
+        fields.preview.innerHTML = data.hasImage ? `<img src="${API_BASE}/questions/${questionId}/image" alt="Hình minh họa">` : '';
+
+        data.answers.forEach((ans, idx) => {
+            if (fields.answers[idx]) {
+                fields.answers[idx].value = ans.answerText || '';
+                fields.correctRadios[idx].checked = !!ans.isCorrect;
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        showNotification('Không thể tải dữ liệu câu hỏi.', 'error');
+    }
+}
+
+async function saveQuestion() {
+    const correctAnswer = document.querySelector('input[name="correctAnswer"]:checked');
+    if (!correctAnswer) {
+        showNotification('Vui lòng chọn đáp án đúng.', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('QuestionText', fields.questionText.value.trim());
+    formData.append('Explanation', fields.explanation.value.trim());
+    formData.append('ExamID', selectedExamId);
+    formData.append('Answer1', fields.answers[0].value.trim());
+    formData.append('Answer2', fields.answers[1].value.trim());
+    formData.append('Answer3', fields.answers[2].value.trim());
+    formData.append('Answer4', fields.answers[3].value.trim());
+    formData.append('CorrectAnswerIndex', correctAnswer.value);
+
+    const imageFile = fields.image.files[0];
+    if (imageFile) {
+        formData.append('Image', imageFile);
+    }
+
+    const isEdit = !!editingQuestionId;
+    const url = isEdit ? `${API_BASE}/questions/${editingQuestionId}` : `${API_BASE}/questions`;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, { method, body: formData });
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+            throw new Error(result.message || 'Có lỗi xảy ra');
+        }
+
+        showNotification(isEdit ? 'Đã cập nhật câu hỏi.' : 'Đã thêm câu hỏi mới.', 'success');
+        closeModal();
+        resetForm();
+        loadExamQuestions(selectedExamId, selectedExamName);
+    } catch (error) {
+        console.error(error);
+        showNotification(error.message || 'Không thể lưu câu hỏi.', 'error');
+    }
+}
+
+async function deleteQuestion(questionId) {
+    if (!confirm('Bạn có chắc muốn xóa câu hỏi này?')) return;
+    try {
+        const res = await fetch(`${API_BASE}/exams/${selectedExamId}/questions/${questionId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Không thể xóa câu hỏi');
+        showNotification('Đã xóa câu hỏi.', 'success');
+        loadExamQuestions(selectedExamId, selectedExamName);
+    } catch (error) {
+        console.error(error);
+        showNotification(error.message, 'error');
+    }
+}
+
+async function deleteSelectedExam() {
+    alert('Tính năng xóa đề hiện chưa hỗ trợ. Vui lòng quản lý đề ở cơ sở dữ liệu.');
+}
+
+function showNotification(message, type = 'info') {
     notification.textContent = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
+    setTimeout(() => notification.style.display = 'none', 4000);
 }
