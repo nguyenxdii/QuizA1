@@ -53,7 +53,8 @@ app.UseStaticFiles();
 app.MapGet("/api/exams", async (QuizA1DbContext db) =>
 {
     var exams = await db.Exams
-        .Where(e => e.IsActive)
+        .AsNoTracking()
+        .Where(e => !e.Inactive)
         .OrderBy(e => e.ExamID)
         .Take(10)
         .Select(e => new
@@ -71,25 +72,30 @@ app.MapGet("/api/exams", async (QuizA1DbContext db) =>
 app.MapGet("/api/exams/{examId}", async (int examId, QuizA1DbContext db) =>
 {
     var exam = await db.Exams
-        .Where(e => e.ExamID == examId)
+        .AsNoTracking()
+        .Where(e => e.ExamID == examId && !e.Inactive)
         .Select(e => new
         {
             examId = e.ExamID,
             examName = e.ExamName,
             questions = e.ExamQuestions
+                .Where(eq => eq.Question != null && !eq.Question.Inactive)
                 .OrderBy(eq => eq.DisplayOrder)
                 .Select(eq => new
                 {
-                    questionId = eq.Question.QuestionID,
+                    questionId = eq.Question!.QuestionID,
                     questionText = eq.Question.QuestionText,
                     hasImage = eq.Question.ImageData != null,
                     explanation = eq.Question.Explanation,
-                    answers = eq.Question.Answers.Select(a => new
-                    {
-                        answerId = a.AnswerID,
-                        answerText = a.AnswerText,
-                        isCorrect = a.IsCorrect
-                    }).ToList()
+                    answers = eq.Question.Answers
+                        .Where(a => !a.Inactive)
+                        .OrderBy(a => a.AnswerID)
+                        .Select(a => new
+                        {
+                            answerId = a.AnswerID,
+                            answerText = a.AnswerText,
+                            isCorrect = a.IsCorrect
+                        }).ToList()
                 }).ToList()
         })
         .FirstOrDefaultAsync();
@@ -214,7 +220,8 @@ app.MapPost("/api/questions", async (HttpRequest request, QuizA1DbContext db) =>
 app.MapGet("/api/questions/{questionId}", async (int questionId, QuizA1DbContext db) =>
 {
     var question = await db.Questions
-        .Where(q => q.QuestionID == questionId)
+        .AsNoTracking()
+        .Where(q => q.QuestionID == questionId && !q.Inactive)
         .Select(q => new
         {
             questionId = q.QuestionID,
@@ -222,6 +229,7 @@ app.MapGet("/api/questions/{questionId}", async (int questionId, QuizA1DbContext
             explanation = q.Explanation,
             hasImage = q.ImageData != null,
             answers = q.Answers
+                .Where(a => !a.Inactive)
                 .OrderBy(a => a.AnswerID)
                 .Select(a => new
                 {
