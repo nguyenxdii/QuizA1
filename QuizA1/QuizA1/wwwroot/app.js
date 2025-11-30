@@ -333,3 +333,12 @@ function shuffleArray(array) {
     }
     return newArray;
 }
+
+// Thêm hàm này vào cuối file app.js
+function updateQuestionCounter() {
+    const count = currentQuestions.length;
+    const counterElement = document.getElementById('questionCounter');
+    if (counterElement) {
+        counterElement.textContent = `Câu hỏi: ${count}`;
+    }
+}
