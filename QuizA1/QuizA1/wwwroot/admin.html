@@ -1,105 +1,104 @@
-\u003c!DOCTYPE html\u003e
-\u003chtml lang="vi"\u003e
-\u003chead\u003e
-    \u003cmeta charset="UTF-8"\u003e
-    \u003cmeta name="viewport" content="width=device-width, initial-scale=1.0"\u003e
-    \u003ctitle\u003eAdmin - Quản Lý Ngân Hàng Câu Hỏi\u003c/title\u003e
-    \u003clink rel="stylesheet" href="styles.css"\u003e
-    \u003clink rel="stylesheet" href="admin.css"\u003e
-\u003c/head\u003e
-\u003cbody\u003e
-    \u003cdiv class="admin-container"\u003e
-        \u003c!-- Sidebar --\u003e
-        \u003caside class="admin-sidebar"\u003e
-            \u003cdiv class="sidebar-header"\u003e
-                \u003ch2\u003e⚙️ Admin Panel\u003c/h2\u003e
-                \u003ca href="index.html" class="back-link"\u003e← Về trang thi\u003c/a\u003e
-            \u003c/div\u003e
-            
-            \u003cdiv class="sidebar-content"\u003e
-                \u003cdiv class="sidebar-section"\u003e
-                    \u003ch3\u003eDanh sách đề thi\u003c/h3\u003e
-                    \u003cbutton id="refreshExams" class="icon-btn small" title="Tải lại"\u003e🔄\u003c/button\u003e
-                \u003c/div\u003e
-                \u003cdiv id="examGrid" class="exam-list-sidebar"\u003e
-                    \u003c!-- Exam items will be injected here --\u003e
-                \u003c/div\u003e
-            \u003c/div\u003e
-        \u003c/aside\u003e
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Quản Lý Ngân Hàng Câu Hỏi</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Bảng điều khiển Admin</h1>
+            <p class="subtitle">Quản lý đề thi và chỉnh sửa câu hỏi nhanh chóng</p>
+            <a href="index.html" class="home-link">← Quay về trang thi</a>
+        </header>
 
-        \u003c!-- Main Content --\u003e
-        \u003cmain class="admin-main"\u003e
-            \u003cheader class="main-header"\u003e
-                \u003cdiv class="header-info"\u003e
-                    \u003ch1 id="selectedExamTitle"\u003eChọn đề thi\u003c/h1\u003e
-                    \u003cp id="questionCount"\u003eVui lòng chọn đề thi từ danh sách bên trái\u003c/p\u003e
-                \u003c/div\u003e
-                \u003cdiv class="header-actions"\u003e
-                    \u003cbutton id="addQuestionBtn" class="primary-btn" disabled\u003e➕ Thêm câu hỏi\u003c/button\u003e
-                    \u003cbutton id="deleteExamBtn" class="danger-btn" disabled\u003e🗑️ Xóa đề\u003c/button\u003e
-                \u003c/div\u003e
-            \u003c/header\u003e
+        <div class="admin-layout">
+            <section class="panel exam-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Danh sách đề thi</h2>
+                        <p class="panel-subtitle">Chọn đề để xem và chỉnh sửa câu hỏi</p>
+                    </div>
+                    <button id="refreshExams" class="icon-btn">🔄 Tải lại</button>
+                </div>
+                <div id="examGrid" class="exam-grid"></div>
+            </section>
 
-            \u003cdiv id="questionList" class="question-grid empty-state"\u003e
-                \u003cdiv class="empty-message"\u003e
-                    \u003cimg src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" alt="Empty" style="width: 64px; opacity: 0.5; margin-bottom: 10px;"\u003e
-                    \u003cp\u003eChưa có câu hỏi nào được chọn.\u003c/p\u003e
-                \u003c/div\u003e
-            \u003c/div\u003e
-        \u003c/main\u003e
-    \u003c/div\u003e
+            <section class="panel question-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2 id="selectedExamTitle">Chưa chọn đề thi</h2>
+                        <p id="questionCount" class="panel-subtitle">Vui lòng chọn một đề ở danh sách bên trái</p>
+                    </div>
+                    <div class="panel-actions">
+                        <button id="addQuestionBtn" class="primary-btn" disabled>➕ Thêm câu hỏi</button>
+                        <button id="deleteExamBtn" class="danger-btn" disabled>🗑️ Xóa đề</button>
+                    </div>
+                </div>
+                <div id="questionList" class="question-list empty-state">
+                    <p>Chưa có dữ liệu. Hãy chọn một đề để xem chi tiết.</p>
+                </div>
+            </section>
+        </div>
+    </div>
 
-    \u003cdiv id="modalOverlay" class="modal-overlay hidden"\u003e
-        \u003cdiv class="modal"\u003e
-            \u003cdiv class="modal-header"\u003e
-                \u003ch3 id="modalTitle"\u003eThêm câu hỏi\u003c/h3\u003e
-                \u003cbutton id="closeModal" class="icon-btn"\u003e✖\u003c/button\u003e
-            \u003c/div\u003e
-            \u003cform id="questionForm" class="question-form"\u003e
-                \u003cinput type="hidden" id="editingQuestionId" value=""\u003e
-                \u003cdiv class="form-group"\u003e
-                    \u003clabel for="questionText"\u003eCâu hỏi:\u003c/label\u003e
-                    \u003ctextarea id="questionText" rows="3" required\u003e\u003c/textarea\u003e
-                \u003c/div\u003e
-                \u003cdiv class="form-group"\u003e
-                    \u003clabel for="explanation"\u003eGiải thích:\u003c/label\u003e
-                    \u003ctextarea id="explanation" rows="3"\u003e\u003c/textarea\u003e
-                \u003c/div\u003e
-                \u003cdiv class="form-group"\u003e
-                    \u003clabel for="imageUpload"\u003eẢnh minh họa (tùy chọn):\u003c/label\u003e
-                    \u003cinput type="file" id="imageUpload" accept="image/*"\u003e
-                    \u003cdiv id="imagePreview" class="image-preview"\u003e\u003c/div\u003e
-                \u003c/div\u003e
-                \u003cdiv class="answers-section"\u003e
-                    \u003ch3\u003eĐáp án\u003c/h3\u003e
-                    \u003cinput type="hidden" name="correctAnswer" id="correctAnswerInput" value=""\u003e
-                    \u003cdiv class="answer-group"\u003e
-                        \u003cinput type="text" id="answer1" placeholder="Đáp án 1" required\u003e
-                        \u003cbutton type="button" class="correct-answer-btn" data-answer-index="1"\u003e✓ Đáp án đúng\u003c/button\u003e
-                    \u003c/div\u003e
-                    \u003cdiv class="answer-group"\u003e
-                        \u003cinput type="text" id="answer2" placeholder="Đáp án 2" required\u003e
-                        \u003cbutton type="button" class="correct-answer-btn" data-answer-index="2"\u003e✓ Đáp án đúng\u003c/button\u003e
-                    \u003c/div\u003e
-                    \u003cdiv class="answer-group"\u003e
-                        \u003cinput type="text" id="answer3" placeholder="Đáp án 3"\u003e
-                        \u003cbutton type="button" class="correct-answer-btn" data-answer-index="3"\u003e✓ Đáp án đúng\u003c/button\u003e
-                    \u003c/div\u003e
-                    \u003cdiv class="answer-group"\u003e
-                        \u003cinput type="text" id="answer4" placeholder="Đáp án 4"\u003e
-                        \u003cbutton type="button" class="correct-answer-btn" data-answer-index="4"\u003e✓ Đáp án đúng\u003c/button\u003e
-                    \u003c/div\u003e
-                \u003c/div\u003e
-                \u003cdiv class="form-actions"\u003e
-                    \u003cbutton type="submit" class="submit-btn"\u003e💾 Lưu\u003c/button\u003e
-                    \u003cbutton type="button" id="resetForm" class="reset-btn"\u003eLàm mới\u003c/button\u003e
-                \u003c/div\u003e
-            \u003c/form\u003e
-        \u003c/div\u003e
-    \u003c/div\u003e
+    <div id="modalOverlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Thêm câu hỏi</h3>
+                <button id="closeModal" class="icon-btn">✖</button>
+            </div>
+            <form id="questionForm" class="question-form">
+                <input type="hidden" id="editingQuestionId" value="">
+                <div class="form-group">
+                    <label for="questionText">Câu hỏi:</label>
+                    <textarea id="questionText" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="explanation">Giải thích:</label>
+                    <textarea id="explanation" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="imageUpload">Ảnh minh họa (tùy chọn):</label>
+                    <input type="file" id="imageUpload" accept="image/*">
+                    <div id="imagePreview" class="image-preview"></div>
+                </div>
+                <div class="answers-section">
+                    <h3>Đáp án</h3>
+                    <div class="answer-group">
+                        <input type="radio" name="correctAnswer" value="1" id="correct1" required>
+                        <input type="text" id="answer1" placeholder="Đáp án 1" required>
+                        <label for="correct1" class="correct-label">Đáp án đúng</label>
+                    </div>
+                    <div class="answer-group">
+                        <input type="radio" name="correctAnswer" value="2" id="correct2">
+                        <input type="text" id="answer2" placeholder="Đáp án 2" required>
+                        <label for="correct2" class="correct-label">Đáp án đúng</label>
+                    </div>
+                    <div class="answer-group">
+                        <input type="radio" name="correctAnswer" value="3" id="correct3">
+                        <input type="text" id="answer3" placeholder="Đáp án 3">
+                        <label for="correct3" class="correct-label">Đáp án đúng</label>
+                    </div>
+                    <div class="answer-group">
+                        <input type="radio" name="correctAnswer" value="4" id="correct4">
+                        <input type="text" id="answer4" placeholder="Đáp án 4">
+                        <label for="correct4" class="correct-label">Đáp án đúng</label>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">💾 Lưu</button>
+                    <button type="button" id="resetForm" class="reset-btn">Làm mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    \u003cdiv id="notification" class="notification" style="display: none;"\u003e\u003c/div\u003e
+    <div id="notification" class="notification" style="display: none;"></div>
 
-    \u003cscript src="admin.js"\u003e\u003c/script\u003e
-\u003c/body\u003e
-\u003c/html\u003e
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace QuizA1.Models;
 
 public class Question
@@ -7,8 +9,18 @@ public class Question
     public byte[]? ImageData { get; set; }
     public string? ImageFileName { get; set; }
     public string? ImageMimeType { get; set; }
-    public string? Explanation { get; set; }
-    public bool IsActive { get; set; } = true;
+    public string Explanation { get; set; } = string.Empty;
+
+    [Column("Inactive")]
+    public bool Inactive { get; set; } = false;
+
+    [NotMapped]
+    public bool IsActive
+    {
+        get => !Inactive;
+        set => Inactive = !value;
+    }
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     // Navigation properties
