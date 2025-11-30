@@ -9,8 +9,9 @@
 <body>
     <div class="container">
         <header>
-            <h1>🏍️ Thi Trắc Nghiệm Giấy Phép Lái Xe A1</h1>
+            <h1>📘 CHẾ ĐỘ HỌC TẬP TƯƠNG TÁC 📘</h1>
             <p class="subtitle">Chọn đề thi để bắt đầu làm bài</p>
+            <a href="admin.html" class="admin-link">⚙️ Quản lý đề thi</a>
         </header>
 
         <!-- Danh sách đề thi -->
@@ -21,11 +22,31 @@
         <!-- Khu vực làm bài thi -->
         <div id="quizContainer" class="quiz-container" style="display: none;">
             <div class="quiz-header">
-                <h2 id="examTitle"></h2>
+                <div class="quiz-info">
+                    <h2 id="examTitle"></h2>
+                    <span class="question-counter" id="questionCounter">Câu 1 / 25</span>
+                </div>
                 <button id="backBtn" class="back-btn">← Quay lại</button>
             </div>
 
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
             <div id="questionsContainer"></div>
+
+            <!-- Controls cho chế độ 1 câu hỏi -->
+            <div id="singleModeControls" class="single-mode-controls" style="display: none;">
+                <div class="auto-advance-wrapper">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" id="autoAdvanceCheckbox">
+                        <span class="checkmark"></span>
+                        Tự động chuyển câu khi chọn xong đáp án
+                    </label>
+                    <button id="nextQuestionBtn" class="next-btn">Kế tiếp</button>
+                </div>
+                <div id="paginationGrid" class="pagination-grid"></div>
+            </div>
 
             <div class="quiz-actions">
                 <button id="submitBtn" class="submit-btn">📝 Nộp bài</button>
@@ -38,7 +59,19 @@
                 <h2>📊 Kết Quả Thi</h2>
             </div>
             <div id="resultContent"></div>
-            <button id="retryBtn" class="retry-btn">🔄 Làm lại</button>
+            <button id="retryBtn" class="retry-btn">🔄 Chọn đề khác</button>
+        </div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div id="customModal" class="custom-modal-overlay" style="display: none;">
+        <div class="custom-modal">
+            <h3 id="modalTitle">Thông báo</h3>
+            <p id="modalMessage">Nội dung thông báo</p>
+            <div class="modal-actions">
+                <button id="modalYesBtn" class="modal-btn yes">Có</button>
+                <button id="modalNoBtn" class="modal-btn no">Không</button>
+            </div>
         </div>
     </div>
 

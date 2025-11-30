@@ -33,6 +33,39 @@ const fields = {
     editingId: document.getElementById('editingQuestionId')
 };
 
+// DOM Elements
+const examGrid = document.getElementById('examGrid');
+const questionList = document.getElementById('questionList');
+const addQuestionBtn = document.getElementById('addQuestionBtn');
+const deleteExamBtn = document.getElementById('deleteExamBtn');
+const refreshExamsBtn = document.getElementById('refreshExams');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalTitle = document.getElementById('modalTitle');
+const questionForm = document.getElementById('questionForm');
+const notification = document.getElementById('notification');
+
+// Form Fields
+const fields = {
+    questionText: document.getElementById('questionText'),
+    explanation: document.getElementById('explanation'),
+    answers: [
+        document.getElementById('answer1'),
+        document.getElementById('answer2'),
+        document.getElementById('answer3'),
+        document.getElementById('answer4')
+    ],
+    correctRadios: [
+        document.getElementById('correct1'),
+        document.getElementById('correct2'),
+        document.getElementById('correct3'),
+        document.getElementById('correct4')
+    ],
+    image: document.getElementById('imageUpload'),
+    preview: document.getElementById('imagePreview'),
+    editingId: document.getElementById('editingQuestionId')
+};
+
+// Initialization
 document.addEventListener('DOMContentLoaded', () => {
     bindEvents();
     loadExams();

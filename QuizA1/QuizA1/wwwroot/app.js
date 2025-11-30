@@ -36,17 +36,69 @@ async function loadExams() {
     }
 }
 
-// Confirm randomization before loading exam
+// Custom Modal Logic
+function showConfirm(title, message, onYes, onNo) {
+    const modal = document.getElementById('customModal');
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').textContent = message;
+    
+    const yesBtn = document.getElementById('modalYesBtn');
+    const noBtn = document.getElementById('modalNoBtn');
+    
+    // Clear previous listeners
+    const newYes = yesBtn.cloneNode(true);
+    const newNo = noBtn.cloneNode(true);
+    yesBtn.parentNode.replaceChild(newYes, yesBtn);
+    noBtn.parentNode.replaceChild(newNo, noBtn);
+    
+    newYes.onclick = () => {
+        modal.style.display = 'none';
+        if (onYes) onYes();
+    };
+    
+    newNo.onclick = () => {
+        modal.style.display = 'none';
+        if (onNo) onNo();
+    };
+    
+    modal.style.display = 'flex';
+}
+
+// Confirm randomization and mode before loading exam
 function confirmAndLoadExam(examId, examName) {
-    const shouldRandomize = confirm('Bạn có muốn random câu hỏi và câu trả lời không?');
-    randomizeEnabled = shouldRandomize;
-    loadExam(examId, examName);
+    showConfirm('Trộn câu hỏi', 'Bạn có muốn trộn câu hỏi và câu trả lời không?', 
+        () => { // Yes Random
+            randomizeEnabled = true;
+            askMode(examId, examName);
+        },
+        () => { // No Random
+            randomizeEnabled = false;
+            askMode(examId, examName);
+        }
+    );
+}
+
+function askMode(examId, examName) {
+    showConfirm('Chế độ làm bài', 'Bạn có muốn bật chế độ tự động chuyển câu hỏi không?',
+        () => { // Yes Auto/Single Mode
+            isSingleMode = true;
+            loadExam(examId, examName);
+        },
+        () => { // No List Mode
+            isSingleMode = false;
+            loadExam(examId, examName);
+        }
+    );
 }
 
 // Load exam details
 async function loadExam(examId, examName) {
     try {
         const response = await fetch(`${API_BASE}/exams/${examId}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
         const exam = await response.json();
         
         currentExam = exam;
@@ -71,14 +123,80 @@ function displayExam(examName) {
     document.getElementById('examList').style.display = 'none';
     document.getElementById('quizContainer').style.display = 'block';
     document.getElementById('examTitle').textContent = examName;
+    document.getElementById('submitBtn').style.display = 'block';
+    document.getElementById('resultContainer').style.display = 'none';
     
     const container = document.getElementById('questionsContainer');
+    const singleControls = document.getElementById('singleModeControls');
+    
     container.innerHTML = '';
     
-    currentQuestions.forEach((question, index) => {
-        const questionCard = createQuestionCard(question, index);
-        container.appendChild(questionCard);
+    if (isSingleMode) {
+        singleControls.style.display = 'block';
+        renderSingleQuestion(currentQuestionIndex);
+        updatePaginationGrid();
+    } else {
+        singleControls.style.display = 'none';
+        currentQuestions.forEach((question, index) => {
+            const questionCard = createQuestionCard(question, index);
+            container.appendChild(questionCard);
+        });
+    }
+    
+    updateQuestionCounter();
+}
+
+// Render Single Question
+function renderSingleQuestion(index) {
+    const container = document.getElementById('questionsContainer');
+    container.innerHTML = ''; // Clear previous
+    
+    const question = currentQuestions[index];
+    const card = createQuestionCard(question, index);
+    container.appendChild(card);
+    
+    // Update pagination active state
+    updatePaginationGrid();
+}
+
+// Update Pagination Grid
+function updatePaginationGrid() {
+    const grid = document.getElementById('paginationGrid');
+    grid.innerHTML = '';
+    
+    currentQuestions.forEach((q, idx) => {
+        const dot = document.createElement('div');
+        dot.className = 'page-dot';
+        dot.textContent = idx + 1;
+        
+        if (idx === currentQuestionIndex) dot.classList.add('active');
+        if (userAnswers[q.questionId]) dot.classList.add('answered');
+        
+        // If submitted, show correct/incorrect
+        if (document.getElementById('resultContainer').style.display === 'block') {
+            const userAnswer = userAnswers[q.questionId];
+            if (userAnswer && userAnswer.isCorrect) {
+                dot.classList.add('correct');
+            } else {
+                dot.classList.add('incorrect');
+            }
+        }
+        
+        dot.onclick = () => {
+            currentQuestionIndex = idx;
+            renderSingleQuestion(currentQuestionIndex);
+        };
+        
+        grid.appendChild(dot);
     });
+}
+
+// Next Question Logic
+function nextQuestion() {
+    if (currentQuestionIndex < currentQuestions.length - 1) {
+        currentQuestionIndex++;
+        renderSingleQuestion(currentQuestionIndex);
+    }
 }
 
 // Create question card
@@ -88,8 +206,10 @@ function createQuestionCard(question, index) {
     card.id = `question-${question.questionId}`;
     
     let html = `
-        <div class="question-number">Câu ${index + 1}</div>
-        <div class="question-text">${question.questionText}</div>
+        <div class="question-header">
+            <div class="question-number">Câu ${index + 1}:</div>
+            <div class="question-text">${question.questionText}</div>
+        </div>
     `;
     
     // Add image if exists
@@ -104,7 +224,10 @@ function createQuestionCard(question, index) {
     }
     
     html += '<ul class="answers-list">';
-    answers.forEach(answer => {
+    answers.forEach((answer, idx) => {
+        const isSelected = userAnswers[question.questionId]?.answerId === answer.answerId;
+        const selectedClass = isSelected ? 'selected' : '';
+        
         html += `
             <li class="answer-item" data-answer-id="${answer.answerId}" data-is-correct="${answer.isCorrect}" onclick="handleAnswerClick(${question.questionId}, ${answer.answerId}, ${answer.isCorrect})">
                 <input type="radio"
@@ -126,6 +249,18 @@ function createQuestionCard(question, index) {
     `;
     
     card.innerHTML = html;
+    
+    // If already answered/submitted, restore state
+    if (userAnswers[question.questionId]) {
+        // Restore selection
+        const ansId = userAnswers[question.questionId].answerId;
+        setTimeout(() => {
+             const item = card.querySelector(`[data-answer-id="${ansId}"]`);
+             if(item) item.classList.add('selected');
+             updateAnswerStatus(question.questionId); // Show status if visible
+        }, 0);
+    }
+    
     return card;
 }
 
@@ -266,6 +401,9 @@ function displayResult(correctCount, wrongAnswers) {
     let resultHTML = `
         <div class="score-display">
             ${correctCount}/${total} câu đúng (${percentage}%)
+            <div style="font-size: 0.5em; margin-top: 10px;">
+                ${percentage >= 80 ? '🎉 ĐẠT' : '⚠️ KHÔNG ĐẠT'}
+            </div>
         </div>
     `;
 
@@ -311,9 +449,13 @@ function setupEventListeners() {
     
     document.getElementById('retryBtn').addEventListener('click', () => {
         document.getElementById('resultContainer').style.display = 'none';
+        document.getElementById('quizContainer').style.display = 'none';
         document.getElementById('examList').style.display = 'grid';
+        document.getElementById('submitBtn').style.display = 'block'; // Reset submit button
         loadExams();
     });
+    
+    document.getElementById('nextQuestionBtn').addEventListener('click', nextQuestion);
 }
 
 // Utility: Shuffle array
@@ -324,4 +466,12 @@ function shuffleArray(array) {
         [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
     }
     return newArray;
+}
+
+function updateQuestionCounter() {
+    const count = currentQuestions.length;
+    const counterElement = document.getElementById('questionCounter');
+    if (counterElement) {
+        counterElement.textContent = `Câu hỏi: ${count}`;
+    }
 }

@@ -48,8 +48,6 @@ app.UseCors();
 app.UseStaticFiles();
 app.MapGet("/admin", () => Results.Redirect("/admin.html"));
 
-// API Endpoints
-
 // GET /api/exams - Lấy danh sách 10 đề thi
 app.MapGet("/api/exams", async (QuizA1DbContext db) =>
 {
@@ -101,10 +99,16 @@ app.MapGet("/api/exams/{examId}", async (int examId, QuizA1DbContext db) =>
         })
         .FirstOrDefaultAsync();
 
-    if (exam == null)
-        return Results.NotFound(new { message = "Không tìm thấy đề thi" });
+        if (exam == null)
+            return Results.NotFound(new { message = "Không tìm thấy đề thi" });
 
-    return Results.Ok(exam);
+        return Results.Ok(exam);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error loading exam {examId}: {ex}");
+        return Results.Problem($"Lỗi server: {ex.Message}");
+    }
 });
 
 // GET /api/questions/{questionId}/image - Lấy ảnh câu hỏi
