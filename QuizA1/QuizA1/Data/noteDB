@@ -1,0 +1,345 @@
+USE [QuizA1DB] -- Thay tên database của bạn nếu khác
+GO
+
+BEGIN TRANSACTION;
+
+DECLARE @ExamID INT;
+DECLARE @QuestionID INT;
+
+-- 1. TẠO ĐỀ THI SỐ 1
+INSERT INTO dbo.Exams (ExamName, Description, IsActive)
+VALUES (N'Đề thi số 1', N'Đề thi thử A1 - Bộ đề chuẩn 2024', 1);
+
+SET @ExamID = SCOPE_IDENTITY(); -- Lấy ID của đề vừa tạo
+
+-- ---------------------------------------------------------
+-- CÂU 1
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Người điều khiển giao thông đường bộ được hiểu như thế nào là đúng?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 1);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Là người điều khiển phương tiện tham gia giao thông đường bộ.', 0),
+(@QuestionID, N'Là Cảnh sát giao thông và người được giao nhiệm vụ hướng dẫn giao thông trên đường bộ.', 1), -- ĐÚNG
+(@QuestionID, N'Là người tham gia giao thông đường bộ.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 2
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Khi đang lái xe, phía trước có một xe Cảnh sát giao thông không phát tín hiệu ưu tiên, người lái xe có được phép vượt hay không?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 2);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Không được vượt.', 0),
+(@QuestionID, N'Được phép vượt ở phần đường dành cho người đi bộ qua đường.', 0),
+(@QuestionID, N'Được vượt khi bảo đảm an toàn.', 1); -- ĐÚNG
+
+-- ---------------------------------------------------------
+-- CÂU 3
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Trên một chiều đường có vạch kẻ phân làn đường, người lái xe cơ giới, xe máy chuyên dùng phải điều khiển xe đi trên làn đường nào?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 3);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Đi trên làn đường bên phải trong cùng.', 1), -- ĐÚNG
+(@QuestionID, N'Đi trên làn đường bên trái.', 0),
+(@QuestionID, N'Đi ở bất cứ làn nào nhưng phải bảo đảm tốc độ cho phép.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 4
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Tại nơi có vạch kẻ đường hoặc nơi người đi bộ, xe lăn của người khuyết tật đang qua đường, người điều khiển phương tiện phải làm gì?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 4);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Giảm tốc độ và nhường đường cho người đi bộ, xe lăn.', 0),
+(@QuestionID, N'Quan sát, giảm tốc độ hoặc dừng lại để bảo đảm an toàn.', 1), -- ĐÚNG
+(@QuestionID, N'Quan sát, tăng tốc độ và nhanh chóng đi qua.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 5
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Khi tránh xe đi ngược chiều, các xe phải nhường đường như thế nào là đúng quy tắc giao thông?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 5);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Xe gần chỗ tránh hơn phải vào vị trí tránh.', 0),
+(@QuestionID, N'Xe xuống dốc phải nhường xe lên dốc.', 0),
+(@QuestionID, N'Xe có chướng ngại vật phía trước phải nhường xe không có chướng ngại vật.', 0),
+(@QuestionID, N'Cả ba ý trên.', 1); -- ĐÚNG
+
+-- ---------------------------------------------------------
+-- CÂU 6
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Việc sử dụng còi xe như thế nào để thể hiện văn hóa giao thông?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 6);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Chỉ bấm còi khi thật sự cần thiết, không bấm liên tục hoặc kéo dài.', 1), -- ĐÚNG
+(@QuestionID, N'Bấm còi liên tục để các xe khác nhường đường.', 0),
+(@QuestionID, N'Bấm còi to khi đi qua khu vực đông dân cư.', 0),
+(@QuestionID, N'Không cần dùng còi, tránh gây tiếng ồn.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 7
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Tay ga trên xe mô tô hai bánh có tác dụng gì?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 7);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Để điều khiển xe chạy về phía trước.', 0),
+(@QuestionID, N'Để điều tiết công suất động cơ qua đó điều khiển tốc độ.', 0),
+(@QuestionID, N'Để điều khiển xe chạy lùi.', 0),
+(@QuestionID, N'Điều tiết công suất động cơ qua đó điều khiển tốc độ và giúp xe chạy về phía trước.', 1); -- ĐÚNG (Tổng hợp ý 1 và 2)
+
+-- ---------------------------------------------------------
+-- CÂU 8
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Trong các loại nhiên liệu dưới đây, loại nào giảm thiểu ô nhiễm môi trường?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 8);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Xăng và dầu diesel.', 0),
+(@QuestionID, N'Xăng sinh học và khí sinh học.', 1), -- ĐÚNG
+(@QuestionID, N'Cả hai ý trên.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 9 (CÂU ĐIỂM LIỆT)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, Explanation, IsActive)
+VALUES (N'Khi điều khiển phương tiện tham gia giao thông, hành vi nào sau đây bị cấm?', N'Câu điểm liệt', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 9);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Dùng tay cầm và sử dụng điện thoại hoặc thiết bị điện tử khác.', 1), -- ĐÚNG
+(@QuestionID, N'Chỉ được chở người trên thùng xe ô tô trong trường hợp đặc biệt.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 10 (CÂU ĐIỂM LIỆT)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, Explanation, IsActive)
+VALUES (N'Người điều khiển phương tiện tham gia giao thông đường bộ mà trong máu hoặc hơi thở có nồng độ cồn có bị nghiêm cấm không?', N'Câu điểm liệt', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 10);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Bị nghiêm cấm.', 1), -- ĐÚNG
+(@QuestionID, N'Không bị nghiêm cấm.', 0),
+(@QuestionID, N'Không bị nghiêm cấm nếu nồng độ nhẹ.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 11 (CÂU ĐIỂM LIỆT)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, Explanation, IsActive)
+VALUES (N'Người lái xe mô tô, xe gắn máy không được thực hiện hành vi nào sau đây?', N'Câu điểm liệt', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 11);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Đi đúng phần đường, chấp hành hiệu lệnh.', 0),
+(@QuestionID, N'Đi xe dàn hàng ngang, đi xe vào phần đường dành cho người đi bộ.', 1), -- ĐÚNG
+(@QuestionID, N'Cả hai ý trên.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 12 (CÂU ĐIỂM LIỆT)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, Explanation, IsActive)
+VALUES (N'Hành vi giao xe ô tô, mô tô cho người nào sau đây bị nghiêm cấm?', N'Câu điểm liệt', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 12);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Người chưa đủ tuổi.', 0),
+(@QuestionID, N'Người không có giấy phép lái xe.', 0),
+(@QuestionID, N'Người có GPLX nhưng đã bị trừ hết 12 điểm.', 0),
+(@QuestionID, N'Cả ba ý trên.', 1); -- ĐÚNG
+
+-- ---------------------------------------------------------
+-- CÂU 13 (CÓ HÌNH ẢNH)
+-- Lưu ý: Bạn cần update ImageData sau bằng tool Admin
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Biển này có ý nghĩa như thế nào?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 13);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Cấm dừng xe về hướng bên trái.', 0),
+(@QuestionID, N'Cấm dừng và đỗ xe theo hướng bên phải.', 1), -- ĐÚNG
+(@QuestionID, N'Được phép đỗ xe và dừng xe theo hướng bên phải.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 14 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Biển nào báo hiệu “Giao nhau có tín hiệu đèn”?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 14);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Biển 1.', 0),
+(@QuestionID, N'Biển 2.', 0),
+(@QuestionID, N'Biển 3.', 1), -- ĐÚNG
+(@QuestionID, N'Cả ba biển.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 15 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Biển nào dưới đây là biển “Cầu hẹp”?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 15);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Biển 1.', 0),
+(@QuestionID, N'Biển 2.', 1), -- ĐÚNG
+(@QuestionID, N'Biển 3.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 16 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Biển báo này có ý nghĩa như thế nào?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 16);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Tốc độ tối đa cho phép về ban đêm là 70 km/h.', 1), -- ĐÚNG
+(@QuestionID, N'Tốc độ tối thiểu cho phép về ban đêm là 70 km/h.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 17 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Số 50 ghi trên biển báo dưới đây có ý nghĩa như thế nào?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 17);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Tốc độ tối đa các xe cơ giới được phép chạy.', 1), -- ĐÚNG
+(@QuestionID, N'Tốc độ tối thiểu các xe cơ giới được phép chạy.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 18 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Biển nào cấm các phương tiện rẽ trái?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 18);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Biển 1 và 2.', 1), -- ĐÚNG
+(@QuestionID, N'Biển 1 và 3.', 0),
+(@QuestionID, N'Biển 2 và 3.', 0),
+(@QuestionID, N'Cả ba biển.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 19 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Hai biển này có ý nghĩa như thế nào?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 19);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Để chỉ nơi đường sắt giao vuông góc với đường bộ không có rào chắn.', 1), -- ĐÚNG
+(@QuestionID, N'Báo trước sắp đến vị trí giao cắt đường bộ với đường sắt cùng mức, không vuông góc.', 0),
+(@QuestionID, N'Nơi đường sắt giao nhau với đường bộ.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 20 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Biển nào báo hiệu “Đường dành cho xe thô sơ”?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 20);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Biển 1.', 1), -- ĐÚNG
+(@QuestionID, N'Biển 2.', 0),
+(@QuestionID, N'Biển 3.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 21 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Biển nào báo hiệu “Giao nhau với đường hai chiều”?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 21);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Biển 1.', 0),
+(@QuestionID, N'Biển 2.', 1), -- ĐÚNG
+(@QuestionID, N'Biển 3.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 22 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Biển nào báo hiệu “Chú ý chướng ngại vật”?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 22);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Biển 1.', 0),
+(@QuestionID, N'Biển 2 và Biển 3.', 1), -- ĐÚNG
+(@QuestionID, N'Biển 3.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 23 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Theo hướng mũi tên, những hướng nào xe gắn máy được phép đi?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 23);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Cả ba hướng.', 1), -- ĐÚNG
+(@QuestionID, N'Chỉ hướng 1 và 3.', 0),
+(@QuestionID, N'Chỉ hướng 1.', 0);
+
+-- ---------------------------------------------------------
+-- CÂU 24 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Xe nào được quyền đi trước trong trường hợp này?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 24);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Xe con.', 0),
+(@QuestionID, N'Xe mô tô.', 1); -- ĐÚNG
+
+-- ---------------------------------------------------------
+-- CÂU 25 (CÓ HÌNH ẢNH)
+-- ---------------------------------------------------------
+INSERT INTO dbo.Questions (QuestionText, IsActive)
+VALUES (N'Trong tình huống xe container rẽ phải, xe con màu xanh và xe máy phía sau phải đi thế nào để an toàn?', 1);
+SET @QuestionID = SCOPE_IDENTITY();
+INSERT INTO dbo.ExamQuestions (ExamID, QuestionID, DisplayOrder) VALUES (@ExamID, @QuestionID, 25);
+
+INSERT INTO dbo.Answers (QuestionID, AnswerText, IsCorrect) VALUES 
+(@QuestionID, N'Vượt về phía bên phải để đi tiếp.', 0),
+(@QuestionID, N'Giảm tốc độ chờ xe container rẽ xong rồi tiếp tục đi.', 1), -- ĐÚNG
+(@QuestionID, N'Vượt về phía bên trái để đi tiếp.', 0);
+
+COMMIT TRANSACTION;
+PRINT N'Đã thêm Đề thi số 1 và 25 câu hỏi thành công!';
+GO
