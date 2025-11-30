@@ -4,20 +4,9 @@ using QuizA1.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container with a resilient provider fallback
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
+// Add services to the container
 builder.Services.AddDbContext<QuizA1DbContext>(options =>
-{
-    if (!string.IsNullOrWhiteSpace(connectionString))
-    {
-        options.UseSqlServer(connectionString);
-    }
-    else
-    {
-        options.UseSqlite("Data Source=quiz.db");
-    }
-});
+    options.UseSqlServer("Server=DIINGUYEN\\SQLEXPRESS;Database=QuizA1DB;Trusted_Connection=True;TrustServerCertificate=True;"));
 
 builder.Services.AddCors(options =>
 {
@@ -31,30 +20,15 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Ensure database exists and seed fallback data to avoid empty states
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<QuizA1DbContext>();
-    db.Database.EnsureCreated();
-
-    if (!db.Exams.Any())
-    {
-        SeedFallbackData(db);
-    }
-}
-
 // Configure the HTTP request pipeline
 app.UseCors();
 app.UseStaticFiles();
-
-// API Endpoints
 
 // GET /api/exams - Lấy danh sách 10 đề thi
 app.MapGet("/api/exams", async (QuizA1DbContext db) =>
 {
     var exams = await db.Exams
-        .AsNoTracking()
-        .Where(e => !e.Inactive)
+        .Where(e => e.IsActive)
         .OrderBy(e => e.ExamID)
         .Take(10)
         .Select(e => new
@@ -72,30 +46,25 @@ app.MapGet("/api/exams", async (QuizA1DbContext db) =>
 app.MapGet("/api/exams/{examId}", async (int examId, QuizA1DbContext db) =>
 {
     var exam = await db.Exams
-        .AsNoTracking()
-        .Where(e => e.ExamID == examId && !e.Inactive)
+        .Where(e => e.ExamID == examId)
         .Select(e => new
         {
             examId = e.ExamID,
             examName = e.ExamName,
             questions = e.ExamQuestions
-                .Where(eq => eq.Question != null && !eq.Question.Inactive)
                 .OrderBy(eq => eq.DisplayOrder)
                 .Select(eq => new
                 {
-                    questionId = eq.Question!.QuestionID,
+                    questionId = eq.Question.QuestionID,
                     questionText = eq.Question.QuestionText,
                     hasImage = eq.Question.ImageData != null,
                     explanation = eq.Question.Explanation,
-                    answers = eq.Question.Answers
-                        .Where(a => !a.Inactive)
-                        .OrderBy(a => a.AnswerID)
-                        .Select(a => new
-                        {
-                            answerId = a.AnswerID,
-                            answerText = a.AnswerText,
-                            isCorrect = a.IsCorrect
-                        }).ToList()
+                    answers = eq.Question.Answers.Select(a => new
+                    {
+                        answerId = a.AnswerID,
+                        answerText = a.AnswerText,
+                        isCorrect = a.IsCorrect
+                    }).ToList()
                 }).ToList()
         })
         .FirstOrDefaultAsync();
@@ -216,39 +185,60 @@ app.MapPost("/api/questions", async (HttpRequest request, QuizA1DbContext db) =>
     }
 });
 
-// GET /api/questions/{questionId} - Lấy chi tiết câu hỏi cho trang admin
+// GET /api/exams/{examId}/questions - Lấy danh sách câu hỏi của đề (cho admin)
+app.MapGet("/api/exams/{examId}/questions", async (int examId, QuizA1DbContext db) =>
+{
+    var questions = await db.ExamQuestions
+        .Where(eq => eq.ExamID == examId)
+        .OrderBy(eq => eq.DisplayOrder)
+        .Select(eq => new
+        {
+            questionId = eq.Question.QuestionID,
+            questionText = eq.Question.QuestionText,
+            hasImage = eq.Question.ImageData != null,
+            explanation = eq.Question.Explanation,
+            answerCount = eq.Question.Answers.Count,
+            displayOrder = eq.DisplayOrder,
+            answers = eq.Question.Answers.Select(a => new
+            {
+                answerId = a.AnswerID,
+                answerText = a.AnswerText,
+                isCorrect = a.IsCorrect
+            }).ToList()
+        })
+        .ToListAsync();
+
+    return Results.Ok(questions);
+});
+
+// GET /api/questions/{questionId} - Lấy chi tiết một câu hỏi (cho edit)
 app.MapGet("/api/questions/{questionId}", async (int questionId, QuizA1DbContext db) =>
 {
     var question = await db.Questions
-        .AsNoTracking()
-        .Where(q => q.QuestionID == questionId && !q.Inactive)
+        .Where(q => q.QuestionID == questionId)
         .Select(q => new
         {
             questionId = q.QuestionID,
             questionText = q.QuestionText,
             explanation = q.Explanation,
             hasImage = q.ImageData != null,
-            answers = q.Answers
-                .Where(a => !a.Inactive)
-                .OrderBy(a => a.AnswerID)
-                .Select(a => new
-                {
-                    answerId = a.AnswerID,
-                    answerText = a.AnswerText,
-                    isCorrect = a.IsCorrect
-                }).ToList()
+            imageFileName = q.ImageFileName,
+            answers = q.Answers.Select(a => new
+            {
+                answerId = a.AnswerID,
+                answerText = a.AnswerText,
+                isCorrect = a.IsCorrect
+            }).ToList()
         })
         .FirstOrDefaultAsync();
 
     if (question == null)
-    {
-        return Results.NotFound(new { success = false, message = "Không tìm thấy câu hỏi" });
-    }
+        return Results.NotFound(new { message = "Không tìm thấy câu hỏi" });
 
     return Results.Ok(question);
 });
 
-// PUT /api/questions/{questionId} - Cập nhật câu hỏi và đáp án
+// PUT /api/questions/{questionId} - Cập nhật câu hỏi
 app.MapPut("/api/questions/{questionId}", async (int questionId, HttpRequest request, QuizA1DbContext db) =>
 {
     try
